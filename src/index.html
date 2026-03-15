@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="dailyQuoteApp">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Daily Quote Generator — handpicked motivational quotes powered by Supabase." />
+    <title>Daily Quote Generator</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Supabase CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <!-- AngularJS CDN -->
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.3/angular.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.3/angular-animate.min.js"></script>
+
+    <!-- App Stylesheet -->
+    <link rel="stylesheet" href="assets/css/style.css" />
+  </head>
+
+  <body ng-controller="QuoteController as vm">
+
+    <!-- ─── Background Canvas ─────────────────────────────────── -->
+    <div class="bg-layer" aria-hidden="true">
+      <div class="bg-orb bg-orb--1"></div>
+      <div class="bg-orb bg-orb--2"></div>
+      <div class="bg-orb bg-orb--3"></div>
+    </div>
+
+    <!-- ─── Header ────────────────────────────────────────────── -->
+    <header class="site-header">
+      <div class="header-inner">
+        <span class="logo-mark">✦</span>
+        <span class="logo-text">DailyQuote</span>
+        <span class="logo-badge">v1.0</span>
+      </div>
+    </header>
+
+    <!-- ─── Main Content ──────────────────────────────────────── -->
+    <main class="main-stage">
+
+      <!-- Date Chip -->
+      <p class="date-chip">{{ vm.today }}</p>
+
+      <!-- Quote Card -->
+      <div class="quote-card" ng-class="{ 'is-loading': vm.loading, 'is-error': vm.error }">
+
+        <!-- Loading State -->
+        <div class="state state--loading" ng-if="vm.loading">
+          <div class="spinner">
+            <span></span><span></span><span></span>
+          </div>
+          <p>Fetching your quote…</p>
+        </div>
+
+        <!-- Error State -->
+        <div class="state state--error" ng-if="!vm.loading && vm.error">
+          <p class="error-icon">⚠</p>
+          <p class="error-message">{{ vm.error }}</p>
+          <button class="btn btn--ghost" ng-click="vm.fetchRandomQuote()">Try Again</button>
+        </div>
+
+        <!-- Quote Content -->
+        <div class="quote-content" ng-if="!vm.loading && !vm.error && vm.quote">
+          <span class="quote-mark quote-mark--open">"</span>
+
+          <blockquote class="quote-text">
+            {{ vm.quote.content }}
+          </blockquote>
+
+          <span class="quote-mark quote-mark--close">"</span>
+
+          <div class="quote-meta">
+            <span class="quote-dash">—</span>
+            <cite class="quote-author">{{ vm.quote.author }}</cite>
+            <span class="quote-category" ng-if="vm.quote.category">
+              #{{ vm.quote.category }}
+            </span>
+          </div>
+        </div>
+
+      </div>
+      <!-- /quote-card -->
+
+      <!-- Action Row -->
+      <div class="action-row" ng-if="!vm.loading">
+        <button
+          class="btn btn--primary"
+          ng-click="vm.fetchRandomQuote()"
+          ng-disabled="vm.loading"
+          aria-label="Get a new random quote"
+        >
+          <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="23 4 23 10 17 10"></polyline>
+            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+          </svg>
+          New Quote
+        </button>
+
+        <button
+          class="btn btn--ghost"
+          ng-click="vm.copyToClipboard()"
+          ng-if="vm.quote"
+          aria-label="Copy quote to clipboard"
+        >
+          <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+          </svg>
+          {{ vm.copied ? 'Copied!' : 'Copy' }}
+        </button>
+
+        <button
+          class="btn btn--ghost"
+          ng-click="vm.shareOnTwitter()"
+          ng-if="vm.quote"
+          aria-label="Share on Twitter / X"
+        >
+          <svg class="btn-icon" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.253 5.622L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+          </svg>
+          Share
+        </button>
+      </div>
+
+      <!-- Stats Bar -->
+      <div class="stats-bar" ng-if="vm.totalQuotes > 0">
+        <span>{{ vm.totalQuotes }} quotes in the library</span>
+        <span class="stats-dot">·</span>
+        <span>Quote #{{ vm.quote.id }}</span>
+      </div>
+
+    </main>
+    <!-- /main-stage -->
+
+    <!-- ─── Footer ────────────────────────────────────────────── -->
+    <footer class="site-footer">
+      <p>
+        Built with <span class="heart">♥</span> using
+        <a href="https://angularjs.org" target="_blank" rel="noopener">AngularJS</a>
+        &amp;
+        <a href="https://supabase.com" target="_blank" rel="noopener">Supabase</a>
+      </p>
+    </footer>
+
+    <!-- ─── Toast Notification ────────────────────────────────── -->
+    <div class="toast" ng-class="{ 'toast--visible': vm.showToast }">
+      {{ vm.toastMessage }}
+    </div>
+
+    <!-- App Script -->
+    <script src="assets/js/app.js"></script>
+  </body>
+</html>
