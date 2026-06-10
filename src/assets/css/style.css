@@ -203,7 +203,59 @@ a:hover {
   gap: var(--space-xl);
 }
 
-/* ── 6. Date Chip ─────────────────────────────────────────────── */
+/* ── 6. Intro Hero ───────────────────────────────────────────── */
+.hero-copy {
+  width: 100%;
+  max-width: 680px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.eyebrow {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+}
+
+.hero-copy h1 {
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 3.8vw, 2.6rem);
+  line-height: 1.1;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.hero-subtitle {
+  max-width: 580px;
+  font-size: 0.98rem;
+  color: var(--color-text-muted);
+}
+
+.helper-pills {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-sm);
+  margin-top: var(--space-xs);
+}
+
+.hero-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.8rem;
+  border-radius: var(--radius-pill);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--color-text-muted);
+  font-size: 0.78rem;
+}
+
 .date-chip {
   font-size: 0.75rem;
   font-weight: 500;
@@ -389,8 +441,16 @@ a:hover {
 
 .error-message {
   color: var(--color-text-muted);
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   max-width: 340px;
+  text-align: center;
+  line-height: 1.5;
+}
+
+.error-hint {
+  color: var(--color-text-muted);
+  font-size: 0.83rem;
+  max-width: 360px;
   text-align: center;
   line-height: 1.5;
 }
@@ -547,6 +607,10 @@ a:hover {
 
   .main-stage {
     padding: var(--space-xl) var(--space-md);
+  }
+
+  .hero-subtitle {
+    font-size: 0.92rem;
   }
 }
 

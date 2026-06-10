@@ -48,11 +48,17 @@
   function SupabaseService($q, SUPABASE_CONFIG) {
     const self = this;
 
-    // Initialise the Supabase client (available globally via CDN)
-    const _client = supabase.createClient(
-      SUPABASE_CONFIG.url,
-      SUPABASE_CONFIG.anonKey
+    const isConfigured = Boolean(
+      SUPABASE_CONFIG.url &&
+      SUPABASE_CONFIG.url !== "YOUR_SUPABASE_URL" &&
+      SUPABASE_CONFIG.anonKey &&
+      SUPABASE_CONFIG.anonKey !== "YOUR_SUPABASE_ANON_KEY"
     );
+
+    // Initialise the Supabase client only when configuration is present.
+    const _client = isConfigured
+      ? supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey)
+      : null;
 
     const TABLE = "quotes";
 
@@ -62,6 +68,11 @@
      */
     self.getCount = function () {
       const deferred = $q.defer();
+
+      if (!_client) {
+        deferred.reject(new Error("Supabase connection not configured."));
+        return deferred.promise;
+      }
 
       _client
         .from(TABLE)
@@ -187,7 +198,12 @@
         })
         .catch(function (err) {
           console.error("[QuoteController] Failed to fetch quote:", err);
-          vm.error = "Could not load a quote. Please check your connection and try again.";
+
+          if (err && err.message && err.message.indexOf("Supabase connection not configured") !== -1) {
+            vm.error = "The quote library is not connected yet. Add your Supabase URL and anonymous key to start loading quotes.";
+          } else {
+            vm.error = "Could not load a quote. Please check your connection and try again.";
+          }
         })
         .finally(function () {
           vm.loading = false;

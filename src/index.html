@@ -46,6 +46,19 @@
     <!-- ─── Main Content ──────────────────────────────────────── -->
     <main class="main-stage">
 
+      <section class="hero-copy" aria-label="Quick introduction">
+        <p class="eyebrow">Daily inspiration</p>
+        <h1>Find a thoughtful quote in seconds.</h1>
+        <p class="hero-subtitle">
+          Refresh your mood with a new line of encouragement, then copy or share it in one tap.
+        </p>
+        <div class="helper-pills" aria-label="App highlights">
+          <span class="hero-pill">Fresh perspective</span>
+          <span class="hero-pill">Easy to copy</span>
+          <span class="hero-pill">Ready to share</span>
+        </div>
+      </section>
+
       <!-- Date Chip -->
       <p class="date-chip">{{ vm.today }}</p>
 
@@ -64,6 +77,9 @@
         <div class="state state--error" ng-if="!vm.loading && vm.error">
           <p class="error-icon">⚠</p>
           <p class="error-message">{{ vm.error }}</p>
+          <p class="error-hint" ng-if="vm.error.includes('Supabase')">
+            Add your Supabase URL and anonymous key in the app configuration, then refresh the page.
+          </p>
           <button class="btn btn--ghost" ng-click="vm.fetchRandomQuote()">Try Again</button>
         </div>
 
