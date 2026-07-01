@@ -63,14 +63,17 @@
       <p class="date-chip">{{ vm.today }}</p>
 
       <!-- Quote Card -->
-      <div class="quote-card" ng-class="{ 'is-loading': vm.loading, 'is-error': vm.error }">
+      <div class="quote-card" ng-class="{ 'is-loading': vm.loading, 'is-error': vm.error }" role="region" aria-live="polite" aria-busy="{{ vm.loading }}">
 
         <!-- Loading State -->
-        <div class="state state--loading" ng-if="vm.loading">
-          <div class="spinner">
-            <span></span><span></span><span></span>
+        <div class="state state--loading" ng-if="vm.loading" role="status" aria-live="polite">
+          <div class="skeleton-card" aria-hidden="true">
+            <div class="skeleton skeleton--line skeleton--lg"></div>
+            <div class="skeleton skeleton--line"></div>
+            <div class="skeleton skeleton--line skeleton--sm"></div>
+            <div class="skeleton skeleton--pill"></div>
           </div>
-          <p>Fetching your quote…</p>
+          <p>Loading a fresh quote…</p>
         </div>
 
         <!-- Error State -->
@@ -84,7 +87,7 @@
         </div>
 
         <!-- Quote Content -->
-        <div class="quote-content" ng-if="!vm.loading && !vm.error && vm.quote">
+        <div class="quote-content" ng-if="!vm.loading && !vm.error && vm.quote" role="status" aria-live="polite">
           <span class="quote-mark quote-mark--open">"</span>
 
           <blockquote class="quote-text">
