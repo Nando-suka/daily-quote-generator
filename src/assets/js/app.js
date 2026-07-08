@@ -170,9 +170,12 @@
     vm.fetchRandomQuote = fetchRandomQuote;
     vm.copyToClipboard  = copyToClipboard;
     vm.shareOnTwitter   = shareOnTwitter;
+    vm.shareOnLinkedIn  = shareOnLinkedIn;
+    vm.shareOnFacebook  = shareOnFacebook;
 
     /* ── Initialise ─────────────────────────────────────────── */
     activate();
+    _setupKeyboardShortcuts();
 
     // ── Private Functions ────────────────────────────────────
 
@@ -245,6 +248,38 @@
       );
       const url = `https://twitter.com/intent/tweet?text=${tweetText}`;
       window.open(url, "_blank", "noopener,noreferrer");
+      _showToast("Shared to Twitter/X ✓");
+    }
+
+    /**
+     * Opens a pre-filled LinkedIn share dialog in a new tab.
+     */
+    function shareOnLinkedIn() {
+      if (!vm.quote) return;
+
+      const linkedInShareUrl = encodeURIComponent(window.location.href);
+      const title = encodeURIComponent(`Daily Quote: ${vm.quote.author}`);
+      const summary = encodeURIComponent(
+        `"${vm.quote.content}" — ${vm.quote.author}`
+      );
+      const url = `https://www.linkedin.com/sharing/share-offsite/?url=${linkedInShareUrl}`;
+      window.open(url, "_blank", "noopener,noreferrer");
+      _showToast("Shared to LinkedIn ✓");
+    }
+
+    /**
+     * Opens a pre-filled Facebook share dialog in a new tab.
+     */
+    function shareOnFacebook() {
+      if (!vm.quote) return;
+
+      const facebookShareUrl = encodeURIComponent(window.location.href);
+      const quote = encodeURIComponent(
+        `"${vm.quote.content}" — ${vm.quote.author}`
+      );
+      const url = `https://www.facebook.com/sharer/sharer.php?u=${facebookShareUrl}&quote=${quote}`;
+      window.open(url, "_blank", "noopener,noreferrer");
+      _showToast("Shared to Facebook ✓");
     }
 
     /**
@@ -286,6 +321,44 @@
         year:    "numeric",
         month:   "long",
         day:     "numeric"
+      });
+    }
+
+    /**
+     * Sets up keyboard shortcuts for enhanced UX:
+     *   - Ctrl/Cmd + C  : Copy quote to clipboard
+     *   - Ctrl/Cmd + Alt + T : Share on Twitter
+     *   - Ctrl/Cmd + Alt + L : Share on LinkedIn
+     *   - Ctrl/Cmd + Alt + F : Share on Facebook
+     */
+    function _setupKeyboardShortcuts() {
+      document.addEventListener("keydown", function (event) {
+        const isMac = /Mac|iPhone|iPad|iPod/.test(navigator.platform);
+        const metaKey = isMac ? event.metaKey : event.ctrlKey;
+
+        // Ctrl/Cmd + C → Copy
+        if (metaKey && event.key === "c" && vm.quote && !vm.loading) {
+          event.preventDefault();
+          copyToClipboard();
+        }
+
+        // Ctrl/Cmd + Alt + T → Share Twitter
+        if (metaKey && event.altKey && event.key === "t" && vm.quote) {
+          event.preventDefault();
+          shareOnTwitter();
+        }
+
+        // Ctrl/Cmd + Alt + L → Share LinkedIn
+        if (metaKey && event.altKey && event.key === "l" && vm.quote) {
+          event.preventDefault();
+          shareOnLinkedIn();
+        }
+
+        // Ctrl/Cmd + Alt + F → Share Facebook
+        if (metaKey && event.altKey && event.key === "f" && vm.quote) {
+          event.preventDefault();
+          shareOnFacebook();
+        }
       });
     }
   }
