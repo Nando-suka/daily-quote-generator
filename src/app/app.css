@@ -1,0 +1,4 @@
+/* Component styles are global via src/styles.css */
+:host {
+  display: contents;
+}

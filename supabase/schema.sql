@@ -21,13 +21,23 @@ CREATE INDEX IF NOT EXISTS idx_quotes_category ON public.quotes (category);
 ALTER TABLE public.quotes ENABLE ROW LEVEL SECURITY;
 
 -- 4. Allow anonymous read access (required for the anon key)
-CREATE POLICY "Allow anonymous read access"
-  ON public.quotes
-  FOR SELECT
-  USING (true);
+-- Idempotent: drop existing policy first
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public' AND tablename = 'quotes' AND policyname = 'Allow anonymous read access'
+  ) THEN
+    CREATE POLICY "Allow anonymous read access"
+      ON public.quotes
+      FOR SELECT
+      USING (true);
+  END IF;
+END $$;
 
--- 5. Seed the table with sample quotes
-INSERT INTO public.quotes (content, author, category) VALUES
+-- 5. Seed the table with sample quotes (idempotent)
+INSERT INTO public.quotes (content, author, category)
+SELECT * FROM (VALUES
   ('The only way to do great work is to love what you do.', 'Steve Jobs', 'work'),
   ('It does not matter how slowly you go as long as you do not stop.', 'Confucius', 'perseverance'),
   ('Life is what happens when you''re busy making other plans.', 'John Lennon', 'life'),
@@ -47,4 +57,6 @@ INSERT INTO public.quotes (content, author, category) VALUES
   ('In order to write about life first you must live it.', 'Ernest Hemingway', 'creativity'),
   ('The most wasted of all days is one without laughter.', 'Nicolas Chamfort', 'happiness'),
   ('You have brains in your head. You have feet in your shoes. You can steer yourself any direction you choose.', 'Dr. Seuss', 'self-determination'),
-  ('If you look at what you have in life, you''ll always have more.', 'Oprah Winfrey', 'gratitude');
+  ('If you look at what you have in life, you''ll always have more.', 'Oprah Winfrey', 'gratitude')
+) AS v(content, author, category)
+WHERE NOT EXISTS (SELECT 1 FROM public.quotes LIMIT 1);

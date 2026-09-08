@@ -1,0 +1,41 @@
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*.log
+
+# Dependencies
+node_modules/
+.angular/
+.pnp.*
+
+# Env / secrets — use environment.example.ts as template
+.env
+.env.local
+.env.*.local
+# Uncomment to ignore real credentials (keep example committed):
+# src/environments/environment.ts
+# src/environments/environment.development.ts
+
+# Build output
+dist/
+build/
+out/
+.tmp/
+
+# Python venv (legacy)
+.venv/
+
+# Logs
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+
+# Misc
+coverage/
+*.tsbuildinfo
