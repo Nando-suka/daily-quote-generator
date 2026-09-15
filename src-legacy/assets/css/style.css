@@ -557,8 +557,8 @@ a:hover {
   transform: translateY(-2px);
 }
 
-/* Copy Button — Special State */
-.btn:has-text(\"Copied!\") {
+/* Copy Button — Special State (toggled via .is-copied class — matches Angular version) */
+.btn.is-copied {
   background: rgba(156, 163, 175, 0.15);
   border-color: rgba(74, 222, 128, 0.4);
   color: #4ade80;

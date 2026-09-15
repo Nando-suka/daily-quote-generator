@@ -7,7 +7,11 @@ import { z } from 'zod';
 export const QuoteSchema = z.object({
   id: z.number(),
   content: z.string().min(1, 'Quote content must not be empty'),
-  author: z.string().min(1).default('Unknown'),
+  author: z
+    .string()
+    .min(1)
+    .nullable()
+    .transform((v) => v ?? 'Unknown'),
   category: z.string().nullable(),
 });
 

@@ -18,9 +18,11 @@ node_modules/
 .env
 .env.local
 .env.*.local
-# Uncomment to ignore real credentials (keep example committed):
-# src/environments/environment.ts
-# src/environments/environment.development.ts
+# Real credentials — keep example committed, ignore actual files
+src/environments/environment.ts
+src/environments/environment.development.ts
+src/environments/environment.prod.ts
+!src/environments/environment.example.ts
 
 # Build output
 dist/

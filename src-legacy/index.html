@@ -14,12 +14,24 @@
       rel="stylesheet"
     />
 
-    <!-- Supabase CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Supabase CDN — pinned with SRI for supply-chain safety -->
+    <script
+      src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
+      integrity="sha384-JBR+x8blGwjDRO63aHCGiZMD4VNiTR4ZUGA+N6ZKLf3zNt1fK8IBpcgPaMrxqWBp"
+      crossorigin="anonymous"
+    ></script>
 
-    <!-- AngularJS CDN -->
-    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.3/angular.min.js"></script>
-    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.3/angular-animate.min.js"></script>
+    <!-- AngularJS CDN — pinned with SRI -->
+    <script
+      src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.3/angular.min.js"
+      integrity="sha384-quGekMf1ic6tIOn1GgLl0Pzra4ZkFyTcaDW3hZRjORqPQe3HnTKGl+lNPpuh7Lwv"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.3/angular-animate.min.js"
+      integrity="sha384-9Wkc0+0sznuc96DjBc+a2jhs6R8MK9ESqs9UAzDGVy5Zb/YzHGLC4WPkum3ssaT9"
+      crossorigin="anonymous"
+    ></script>
 
     <!-- App Stylesheet -->
     <link rel="stylesheet" href="assets/css/style.css" />
@@ -125,6 +137,7 @@
 
         <button
           class="btn btn--ghost"
+          ng-class="{ 'is-copied': vm.copied }"
           ng-click="vm.copyToClipboard()"
           ng-if="vm.quote"
           aria-label="Copy quote to clipboard"

@@ -5,15 +5,28 @@
     <title>Daily Quote Generator</title>
     <base href="/" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content="Daily Quote Generator — handpicked motivational quotes powered by Supabase and Angular." />
+    <meta
+      name="description"
+      content="Daily Quote Generator — handpicked motivational quotes powered by Supabase and Angular."
+    />
     <meta name="theme-color" content="#0c0c10" />
     <meta property="og:title" content="Daily Quote Generator" />
-    <meta property="og:description" content="Find a thoughtful quote in seconds — refresh, copy, and share." />
+    <meta
+      property="og:description"
+      content="Find a thoughtful quote in seconds — refresh, copy, and share."
+    />
     <meta property="og:type" content="website" />
     <meta property="og:image" content="/preview.png" />
     <meta name="twitter:card" content="summary_large_image" />
 
     <link rel="icon" type="image/x-icon" href="favicon.ico" />
+
+    <!-- Content Security Policy — tighten after verifying Supabase URL -->
+    <!-- Adjust connect-src to your Supabase project domain -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://*.supabase.co; frame-ancestors 'none';"
+    />
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />

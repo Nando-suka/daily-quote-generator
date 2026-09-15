@@ -1,12 +1,21 @@
-import { Component, OnDestroy, OnInit, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  HostListener,
+  OnDestroy,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { Quote } from './core/quote.model';
 import { SupabaseService } from './core/supabase.service';
+import { environment } from '../environments/environment';
 
 @Component({
   selector: 'app-root',
   imports: [],
   templateUrl: './app.html',
   styleUrl: './app.css',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class App implements OnInit, OnDestroy {
   quote = signal<Quote | null>(null);
@@ -20,23 +29,22 @@ export class App implements OnInit, OnDestroy {
 
   private toastTimer: ReturnType<typeof setTimeout> | undefined;
   private copiedTimer: ReturnType<typeof setTimeout> | undefined;
-  private readonly boundKeyHandler = this.handleKeyDown.bind(this);
 
   constructor(private readonly supabase: SupabaseService) {}
 
   ngOnInit(): void {
-    this.fetchTotalCount();
-    this.fetchRandomQuote();
-    document.addEventListener('keydown', this.boundKeyHandler);
+    // Fire in parallel; count is cached so second getCount is cheap
+    void this.fetchTotalCount();
+    void this.fetchRandomQuote();
   }
 
   ngOnDestroy(): void {
-    document.removeEventListener('keydown', this.boundKeyHandler);
     if (this.toastTimer) clearTimeout(this.toastTimer);
     if (this.copiedTimer) clearTimeout(this.copiedTimer);
   }
 
   async fetchRandomQuote(): Promise<void> {
+    if (this.loading()) return; // guard against rapid clicks / parallel fetches
     this.loading.set(true);
     this.error.set(null);
 
@@ -45,7 +53,9 @@ export class App implements OnInit, OnDestroy {
       this.quote.set(q);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      console.error('[App] Failed to fetch quote:', err);
+      if (!environment.production) {
+        console.error('[App] Failed to fetch quote:', err);
+      }
       if (msg.includes('Supabase connection not configured')) {
         this.error.set(
           'The quote library is not connected yet. Add your Supabase URL and anonymous key in src/environments/environment.ts, then refresh the page.',
@@ -68,7 +78,7 @@ export class App implements OnInit, OnDestroy {
       if (navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(text);
       } else {
-        // Fallback for insecure contexts
+        // Fallback for insecure contexts — uses deprecated execCommand as last resort
         const ta = document.createElement('textarea');
         ta.value = text;
         ta.style.position = 'fixed';
@@ -84,7 +94,9 @@ export class App implements OnInit, OnDestroy {
       this.copiedTimer = setTimeout(() => this.copied.set(false), 2500);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      console.error('[App] Clipboard error:', msg);
+      if (!environment.production) {
+        console.error('[App] Clipboard error:', msg);
+      }
       this.showToastMsg('Copy failed — please try manually.');
     }
   }
@@ -93,7 +105,11 @@ export class App implements OnInit, OnDestroy {
     const q = this.quote();
     if (!q) return;
     const tweetText = encodeURIComponent(`"${q.content}" — ${q.author}\n\n#DailyQuote #Motivation`);
-    window.open(`https://twitter.com/intent/tweet?text=${tweetText}`, '_blank', 'noopener,noreferrer');
+    window.open(
+      `https://twitter.com/intent/tweet?text=${tweetText}`,
+      '_blank',
+      'noopener,noreferrer',
+    );
     this.showToastMsg('Shared to Twitter/X ✓');
   }
 
@@ -101,7 +117,11 @@ export class App implements OnInit, OnDestroy {
     const q = this.quote();
     if (!q) return;
     const url = encodeURIComponent(window.location.href);
-    window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${url}`, '_blank', 'noopener,noreferrer');
+    window.open(
+      `https://www.linkedin.com/sharing/share-offsite/?url=${url}`,
+      '_blank',
+      'noopener,noreferrer',
+    );
     this.showToastMsg('Shared to LinkedIn ✓');
   }
 
@@ -110,7 +130,11 @@ export class App implements OnInit, OnDestroy {
     if (!q) return;
     const fbUrl = encodeURIComponent(window.location.href);
     // Note: Facebook sharer quote param is deprecated; URL is primary
-    window.open(`https://www.facebook.com/sharer/sharer.php?u=${fbUrl}`, '_blank', 'noopener,noreferrer');
+    window.open(
+      `https://www.facebook.com/sharer/sharer.php?u=${fbUrl}`,
+      '_blank',
+      'noopener,noreferrer',
+    );
     this.showToastMsg('Shared to Facebook ✓');
   }
 
@@ -119,7 +143,9 @@ export class App implements OnInit, OnDestroy {
       const count = await this.supabase.getCount();
       this.totalQuotes.set(count ?? 0);
     } catch (err) {
-      console.warn('[App] Could not fetch total count:', err);
+      if (!environment.production) {
+        console.warn('[App] Could not fetch total count:', err);
+      }
     }
   }
 
@@ -131,7 +157,8 @@ export class App implements OnInit, OnDestroy {
   }
 
   private formatDate(date: Date): string {
-    return date.toLocaleDateString('en-US', {
+    // Use user's locale by default; fall back to en-GB for consistency
+    return date.toLocaleDateString(undefined, {
       weekday: 'long',
       year: 'numeric',
       month: 'long',
@@ -139,7 +166,8 @@ export class App implements OnInit, OnDestroy {
     });
   }
 
-  private handleKeyDown(event: KeyboardEvent): void {
+  @HostListener('document:keydown', ['$event'])
+  handleKeyDown(event: KeyboardEvent): void {
     const isMac = /Mac|iPhone|iPad|iPod/.test(navigator.userAgent);
     const metaKey = isMac ? event.metaKey : event.ctrlKey;
     const key = event.key.toLowerCase();

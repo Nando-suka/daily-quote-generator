@@ -1,10 +1,21 @@
 import { TestBed } from '@angular/core/testing';
 import { App } from './app';
+import { SUPABASE_CONFIG } from './core/supabase.config';
 
 describe('App', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [App],
+      providers: [
+        {
+          provide: SUPABASE_CONFIG,
+          useValue: {
+            production: false,
+            supabaseUrl: 'https://test.supabase.co',
+            supabaseAnonKey: 'test-anon-key',
+          },
+        },
+      ],
     }).compileComponents();
   });
 

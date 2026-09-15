@@ -83,7 +83,8 @@
           } else {
             deferred.resolve(count);
           }
-        });
+        })
+        .catch((err) => deferred.reject(err));
 
       return deferred.promise;
     };
@@ -222,19 +223,44 @@
 
       const text = `"${vm.quote.content}" — ${vm.quote.author}`;
 
-      navigator.clipboard
-        .writeText(text)
-        .then(function () {
-          vm.copied = true;
-          _showToast("Quote copied to clipboard ✓");
+      // Prefer modern Clipboard API with fallback for insecure contexts
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard
+          .writeText(text)
+          .then(function () {
+            vm.copied = true;
+            _showToast("Quote copied to clipboard ✓");
+            $timeout(function () {
+              vm.copied = false;
+            }, 2500);
+          })
+          .catch(function () {
+            _fallbackCopy(text);
+          });
+      } else {
+        _fallbackCopy(text);
+      }
 
+      function _fallbackCopy(fallbackText) {
+        try {
+          var ta = document.createElement('textarea');
+          ta.value = fallbackText;
+          ta.style.position = 'fixed';
+          ta.style.opacity = '0';
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand('copy');
+          document.body.removeChild(ta);
+          vm.copied = true;
+          $scope.$applyAsync();
+          _showToast("Quote copied to clipboard ✓");
           $timeout(function () {
             vm.copied = false;
           }, 2500);
-        })
-        .catch(function () {
+        } catch (e) {
           _showToast("Copy failed — please try manually.");
-        });
+        }
+      }
     }
 
     /**
@@ -316,7 +342,7 @@
      * @returns {string}
      */
     function _formatDate(date) {
-      return date.toLocaleDateString("en-US", {
+      return date.toLocaleDateString(undefined, {
         weekday: "long",
         year:    "numeric",
         month:   "long",
@@ -332,33 +358,39 @@
      *   - Ctrl/Cmd + Alt + F : Share on Facebook
      */
     function _setupKeyboardShortcuts() {
-      document.addEventListener("keydown", function (event) {
-        const isMac = /Mac|iPhone|iPad|iPod/.test(navigator.platform);
+      function _handler(event) {
+        const isMac = /Mac|iPhone|iPad|iPod/.test(navigator.userAgent);
         const metaKey = isMac ? event.metaKey : event.ctrlKey;
+        const key = event.key.toLowerCase();
 
         // Ctrl/Cmd + C → Copy
-        if (metaKey && event.key === "c" && vm.quote && !vm.loading) {
+        if (metaKey && key === "c" && vm.quote && !vm.loading) {
           event.preventDefault();
-          copyToClipboard();
+          $scope.$applyAsync(copyToClipboard);
         }
 
         // Ctrl/Cmd + Alt + T → Share Twitter
-        if (metaKey && event.altKey && event.key === "t" && vm.quote) {
+        if (metaKey && event.altKey && key === "t" && vm.quote) {
           event.preventDefault();
-          shareOnTwitter();
+          $scope.$applyAsync(shareOnTwitter);
         }
 
         // Ctrl/Cmd + Alt + L → Share LinkedIn
-        if (metaKey && event.altKey && event.key === "l" && vm.quote) {
+        if (metaKey && event.altKey && key === "l" && vm.quote) {
           event.preventDefault();
-          shareOnLinkedIn();
+          $scope.$applyAsync(shareOnLinkedIn);
         }
 
         // Ctrl/Cmd + Alt + F → Share Facebook
-        if (metaKey && event.altKey && event.key === "f" && vm.quote) {
+        if (metaKey && event.altKey && key === "f" && vm.quote) {
           event.preventDefault();
-          shareOnFacebook();
+          $scope.$applyAsync(shareOnFacebook);
         }
+      }
+
+      document.addEventListener("keydown", _handler);
+      $scope.$on("$destroy", function () {
+        document.removeEventListener("keydown", _handler);
       });
     }
   }

@@ -8,8 +8,8 @@
 -- 1. Create the quotes table
 CREATE TABLE IF NOT EXISTS public.quotes (
   id         BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-  content    TEXT        NOT NULL,
-  author     VARCHAR(120) NOT NULL DEFAULT 'Unknown',
+  content    TEXT        NOT NULL CHECK (char_length(content) > 0),
+  author     VARCHAR(120) NOT NULL DEFAULT 'Unknown' CHECK (char_length(author) > 0),
   category   VARCHAR(60),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -21,7 +21,7 @@ CREATE INDEX IF NOT EXISTS idx_quotes_category ON public.quotes (category);
 ALTER TABLE public.quotes ENABLE ROW LEVEL SECURITY;
 
 -- 4. Allow anonymous read access (required for the anon key)
--- Idempotent: drop existing policy first
+-- Idempotent: create read policy only if missing; writes remain denied by RLS default
 DO $$
 BEGIN
   IF NOT EXISTS (
@@ -34,6 +34,9 @@ BEGIN
       USING (true);
   END IF;
 END $$;
+
+-- 4b. Explicitly deny anonymous writes (defence in depth — RLS denies by default)
+-- No policies for INSERT/UPDATE/DELETE means writes are blocked; documented here for audit.
 
 -- 5. Seed the table with sample quotes (idempotent)
 INSERT INTO public.quotes (content, author, category)
