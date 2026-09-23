@@ -3,6 +3,13 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { Quote, QuoteSchema } from './quote.model';
 import { SUPABASE_CONFIG, SupabaseConfig } from './supabase.config';
 
+export interface PaginatedQuotes {
+  quotes: Quote[];
+  total: number;
+  page: number;
+  totalPages: number;
+}
+
 @Injectable({ providedIn: 'root' })
 export class SupabaseService {
   private readonly client: SupabaseClient | null;
@@ -11,7 +18,9 @@ export class SupabaseService {
 
   /** Simple in-memory cache for count to avoid double queries on boot */
   private countCache: { value: number; expiresAt: number } | null = null;
-  private readonly COUNT_TTL_MS = 60_000;
+  private countRequest: Promise<number> | null = null;
+  private static readonly COUNT_TTL_MS = 60_000;
+  private static readonly MAX_PAGE_SIZE = 100;
 
   constructor(@Inject(SUPABASE_CONFIG) private readonly config: SupabaseConfig) {
     this.isConfigured = Boolean(
@@ -41,19 +50,34 @@ export class SupabaseService {
       return this.countCache.value;
     }
 
+    // Share the in-flight request so parallel callers on boot only query once.
+    if (!this.countRequest) {
+      this.countRequest = this.fetchCount().finally(() => {
+        this.countRequest = null;
+      });
+    }
+    return this.countRequest;
+  }
+
+  private async fetchCount(): Promise<number> {
+    if (!this.client) {
+      throw new Error('Supabase connection not configured.');
+    }
+
     const { count, error } = await this.client
       .from(this.table)
       .select('*', { count: 'exact', head: true });
 
     if (error) throw error;
     const value = count ?? 0;
-    this.countCache = { value, expiresAt: Date.now() + this.COUNT_TTL_MS };
+    this.countCache = { value, expiresAt: Date.now() + SupabaseService.COUNT_TTL_MS };
     return value;
   }
 
   /** Invalidates the cached count — useful after mutations. */
   clearCountCache(): void {
     this.countCache = null;
+    this.countRequest = null;
   }
 
   /**
@@ -100,5 +124,52 @@ export class SupabaseService {
         `Quote validation failed: ${zodErr instanceof Error ? zodErr.message : String(zodErr)}`,
       );
     }
+  }
+
+  /**
+   * Fetches a paginated slice of quotes ordered by id.
+   * Returns validated quotes alongside total count and page metadata.
+   */
+  async getQuotesPaginated(page: number, pageSize: number): Promise<PaginatedQuotes> {
+    if (!this.client) {
+      throw new Error('Supabase connection not configured.');
+    }
+
+    const safePageSize = Number.isFinite(pageSize)
+      ? Math.max(1, Math.min(Math.floor(pageSize), SupabaseService.MAX_PAGE_SIZE))
+      : 5;
+
+    const total = await this.getCount();
+    if (!total || total === 0) {
+      return { quotes: [], total: 0, page: 1, totalPages: 0 };
+    }
+
+    const totalPages = Math.ceil(total / safePageSize);
+    const requestedPage = Number.isFinite(page) ? Math.floor(page) : 1;
+    const safePage = Math.max(1, Math.min(requestedPage, totalPages));
+    const offset = (safePage - 1) * safePageSize;
+
+    const { data, error } = await this.client
+      .from(this.table)
+      .select('id, content, author, category')
+      .order('id', { ascending: true })
+      .range(offset, offset + safePageSize - 1);
+
+    if (error) throw error;
+
+    const quotes: Quote[] = [];
+    if (data) {
+      for (const row of data) {
+        try {
+          quotes.push(QuoteSchema.parse(row));
+        } catch (zodErr) {
+          throw new Error(
+            `Quote validation failed: ${zodErr instanceof Error ? zodErr.message : String(zodErr)}`,
+          );
+        }
+      }
+    }
+
+    return { quotes, total, page: safePage, totalPages };
   }
 }

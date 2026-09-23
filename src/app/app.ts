@@ -8,11 +8,12 @@ import {
 } from '@angular/core';
 import { Quote } from './core/quote.model';
 import { SupabaseService } from './core/supabase.service';
+import { QuoteDrawerComponent } from './quote-drawer/quote-drawer';
 import { environment } from '../environments/environment';
 
 @Component({
   selector: 'app-root',
-  imports: [],
+  imports: [QuoteDrawerComponent],
   templateUrl: './app.html',
   styleUrl: './app.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -26,6 +27,7 @@ export class App implements OnInit, OnDestroy {
   showToast = signal(false);
   toastMessage = signal('');
   today = signal(this.formatDate(new Date()));
+  drawerOpen = signal(false);
 
   private toastTimer: ReturnType<typeof setTimeout> | undefined;
   private copiedTimer: ReturnType<typeof setTimeout> | undefined;
@@ -105,23 +107,15 @@ export class App implements OnInit, OnDestroy {
     const q = this.quote();
     if (!q) return;
     const tweetText = encodeURIComponent(`"${q.content}" — ${q.author}\n\n#DailyQuote #Motivation`);
-    window.open(
-      `https://twitter.com/intent/tweet?text=${tweetText}`,
-      '_blank',
-      'noopener,noreferrer',
-    );
-    this.showToastMsg('Shared to Twitter/X ✓');
+    this.openShareWindow(`https://x.com/intent/post?text=${tweetText}`);
+    this.showToastMsg('Shared to X ✓');
   }
 
   shareOnLinkedIn(): void {
     const q = this.quote();
     if (!q) return;
     const url = encodeURIComponent(window.location.href);
-    window.open(
-      `https://www.linkedin.com/sharing/share-offsite/?url=${url}`,
-      '_blank',
-      'noopener,noreferrer',
-    );
+    this.openShareWindow(`https://www.linkedin.com/sharing/share-offsite/?url=${url}`);
     this.showToastMsg('Shared to LinkedIn ✓');
   }
 
@@ -130,12 +124,21 @@ export class App implements OnInit, OnDestroy {
     if (!q) return;
     const fbUrl = encodeURIComponent(window.location.href);
     // Note: Facebook sharer quote param is deprecated; URL is primary
-    window.open(
-      `https://www.facebook.com/sharer/sharer.php?u=${fbUrl}`,
-      '_blank',
-      'noopener,noreferrer',
-    );
+    this.openShareWindow(`https://www.facebook.com/sharer/sharer.php?u=${fbUrl}`);
     this.showToastMsg('Shared to Facebook ✓');
+  }
+
+  openDrawer(): void {
+    this.drawerOpen.set(true);
+  }
+
+  closeDrawer(): void {
+    this.drawerOpen.set(false);
+  }
+
+  onQuoteSelected(quote: Quote): void {
+    this.quote.set(quote);
+    this.showToastMsg(`Loaded quote #${quote.id}`);
   }
 
   private async fetchTotalCount(): Promise<void> {
@@ -156,6 +159,12 @@ export class App implements OnInit, OnDestroy {
     this.toastTimer = setTimeout(() => this.showToast.set(false), duration);
   }
 
+  /** Opens a share URL without giving the new page access to window.opener. */
+  private openShareWindow(url: string): void {
+    const win = window.open(url, '_blank', 'noopener,noreferrer');
+    if (win) win.opener = null;
+  }
+
   private formatDate(date: Date): string {
     // Use user's locale by default; fall back to en-GB for consistency
     return date.toLocaleDateString(undefined, {
@@ -168,23 +177,34 @@ export class App implements OnInit, OnDestroy {
 
   @HostListener('document:keydown', ['$event'])
   handleKeyDown(event: KeyboardEvent): void {
-    const isMac = /Mac|iPhone|iPad|iPod/.test(navigator.userAgent);
-    const metaKey = isMac ? event.metaKey : event.ctrlKey;
     const key = event.key.toLowerCase();
 
-    if (metaKey && key === 'c' && this.quote() && !this.loading()) {
+    if (key === 'escape' && this.drawerOpen()) {
       event.preventDefault();
-      void this.copyToClipboard();
+      this.closeDrawer();
+      return;
     }
-    if (metaKey && event.altKey && key === 't' && this.quote()) {
+
+    // Never hijack keystrokes while the user is typing.
+    const target = event.target as HTMLElement | null;
+    if (
+      target &&
+      (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)
+    ) {
+      return;
+    }
+
+    // Ctrl on Windows/Linux, Cmd on macOS — accept either for portability.
+    const mod = event.metaKey || event.ctrlKey;
+    if (!mod || !event.altKey || !this.quote()) return;
+
+    if (key === 't') {
       event.preventDefault();
       this.shareOnTwitter();
-    }
-    if (metaKey && event.altKey && key === 'l' && this.quote()) {
+    } else if (key === 'l') {
       event.preventDefault();
       this.shareOnLinkedIn();
-    }
-    if (metaKey && event.altKey && key === 'f' && this.quote()) {
+    } else if (key === 'f') {
       event.preventDefault();
       this.shareOnFacebook();
     }

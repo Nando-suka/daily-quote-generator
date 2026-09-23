@@ -233,6 +233,90 @@ describe('SupabaseService', () => {
       await expect(service.getRandomQuote()).rejects.toThrow('Quote validation failed');
     });
   });
+
+  describe('getQuotesPaginated', () => {
+    function setupPaginatedFetch(quotes: unknown[], count: number) {
+      const countSelect = vi.fn().mockReturnValue({ count, error: null });
+      mockFrom.mockImplementationOnce(() => ({ select: countSelect }));
+
+      const listSelect = vi.fn();
+      const listOrder = vi.fn();
+      const listRange = vi.fn();
+      mockFrom.mockReturnValue({ select: listSelect });
+      listSelect.mockReturnValue({ order: listOrder });
+      listOrder.mockReturnValue({ range: listRange });
+      listRange.mockResolvedValue({ data: quotes, error: null });
+    }
+
+    it('should return paginated quotes with correct metadata', async () => {
+      const quotes = [
+        { id: 1, content: 'Quote one.', author: 'A', category: 'life' },
+        { id: 2, content: 'Quote two.', author: 'B', category: 'work' },
+      ];
+      setupPaginatedFetch(quotes, 20);
+
+      const result = await service.getQuotesPaginated(1, 5);
+
+      expect(result.quotes).toHaveLength(2);
+      expect(result.quotes[0]!.id).toBe(1);
+      expect(result.quotes[1]!.id).toBe(2);
+      expect(result.total).toBe(20);
+      expect(result.page).toBe(1);
+      expect(result.totalPages).toBe(4);
+    });
+
+    it('should return empty array when total is zero', async () => {
+      const countSelect = vi.fn().mockReturnValue({ count: 0, error: null });
+      mockFrom.mockImplementationOnce(() => ({ select: countSelect }));
+
+      const result = await service.getQuotesPaginated(1, 5);
+
+      expect(result.quotes).toHaveLength(0);
+      expect(result.total).toBe(0);
+      expect(result.totalPages).toBe(0);
+    });
+
+    it('should validate each quote with Zod', async () => {
+      const quotes = [{ id: 1, content: 'Valid quote.', author: 'Author', category: null }];
+      setupPaginatedFetch(quotes, 10);
+
+      const result = await service.getQuotesPaginated(1, 5);
+
+      expect(result.quotes[0]!.author).toBe('Author');
+    });
+
+    it('should throw on Supabase error', async () => {
+      const countSelect = vi.fn().mockReturnValue({ count: 10, error: null });
+      mockFrom.mockImplementationOnce(() => ({ select: countSelect }));
+
+      const listSelect = vi.fn();
+      const listOrder = vi.fn();
+      const listRange = vi.fn();
+      mockFrom.mockReturnValue({ select: listSelect });
+      listSelect.mockReturnValue({ order: listOrder });
+      listOrder.mockReturnValue({ range: listRange });
+      listRange.mockResolvedValue({ data: null, error: new Error('query failed') });
+
+      await expect(service.getQuotesPaginated(1, 5)).rejects.toThrow('query failed');
+    });
+
+    it('should clamp page to valid range', async () => {
+      const countSelect = vi.fn().mockReturnValue({ count: 3, error: null });
+      mockFrom.mockImplementationOnce(() => ({ select: countSelect }));
+
+      const listSelect = vi.fn();
+      const listOrder = vi.fn();
+      const listRange = vi.fn();
+      mockFrom.mockReturnValue({ select: listSelect });
+      listSelect.mockReturnValue({ order: listOrder });
+      listOrder.mockReturnValue({ range: listRange });
+      listRange.mockResolvedValue({ data: [], error: null });
+
+      const result = await service.getQuotesPaginated(99, 5);
+
+      expect(result.page).toBe(1);
+    });
+  });
 });
 
 describe('SupabaseService (not configured)', () => {
@@ -262,5 +346,11 @@ describe('SupabaseService (not configured)', () => {
 
   it('should throw when getCount is called without configuration', async () => {
     await expect(service.getCount()).rejects.toThrow('Supabase connection not configured');
+  });
+
+  it('should throw when getQuotesPaginated is called without configuration', async () => {
+    await expect(service.getQuotesPaginated(1, 5)).rejects.toThrow(
+      'Supabase connection not configured',
+    );
   });
 });

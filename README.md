@@ -45,6 +45,7 @@ The design language follows a **refined editorial dark** aesthetic — warm gold
 | Feature | Description |
 |---|---|
 | Random Quotes | Efficiently selects a random record from the database without a full-table scan |
+| Browse Library | Slide-in drawer with paginated quote browsing (5 per page, traditional page numbers) |
 | Copy to Clipboard | One-click copying of the formatted quote + author attribution |
 | Share on X / LinkedIn / Facebook | Opens pre-populated share intents with the quote |
 | Library Stats | Displays the total number of quotes and the current quote's ID |
@@ -91,9 +92,15 @@ daily-quote-generator/
 │       ├── app.css                    # Component styles
 │       ├── app.spec.ts               # Component tests
 │       ├── app.config.ts             # Application configuration
+│       ├── quote-drawer/
+│       │   ├── quote-drawer.ts       # Slide-in drawer component
+│       │   ├── quote-drawer.html     # Drawer template
+│       │   ├── quote-drawer.css      # Drawer styles
+│       │   └── quote-drawer.spec.ts  # Drawer tests
 │       └── core/
 │           ├── quote.model.ts         # Zod schema + TypeScript type
 │           ├── quote.model.spec.ts    # Schema validation tests
+│           ├── supabase.config.ts     # DI injection token for config
 │           ├── supabase.service.ts    # Data access service
 │           └── supabase.service.spec.ts # Service tests
 ├── supabase/

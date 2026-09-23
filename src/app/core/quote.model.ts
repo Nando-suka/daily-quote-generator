@@ -3,16 +3,22 @@ import { z } from 'zod';
 /**
  * Zod schema for runtime validation of Supabase quote records.
  * Uses British English in documentation.
+ *
+ * Tolerant at the boundary: trims whitespace, treats missing or blank
+ * authors as 'Unknown', and normalises blank categories to null so a
+ * single malformed row never breaks the whole quote library.
  */
 export const QuoteSchema = z.object({
-  id: z.number(),
-  content: z.string().min(1, 'Quote content must not be empty'),
+  id: z.number().int().positive(),
+  content: z.string().trim().min(1, 'Quote content must not be empty'),
   author: z
     .string()
-    .min(1)
-    .nullable()
-    .transform((v) => v ?? 'Unknown'),
-  category: z.string().nullable(),
+    .nullish()
+    .transform((v) => (v?.trim() ? v.trim() : 'Unknown')),
+  category: z
+    .string()
+    .nullish()
+    .transform((v) => (v?.trim() ? v.trim() : null)),
 });
 
 export type Quote = z.infer<typeof QuoteSchema>;

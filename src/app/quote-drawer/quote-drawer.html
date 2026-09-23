@@ -1,0 +1,117 @@
+@if (isOpen()) {
+  <!-- Backdrop -->
+  <div #backdrop class="drawer-backdrop" (click)="onBackdropClick($event)" aria-hidden="true"></div>
+
+  <!-- Drawer Panel -->
+  <aside
+    #dialog
+    class="drawer drawer--open"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Quote library"
+    tabindex="-1"
+  >
+    <header class="drawer-header">
+      <div class="drawer-header-text">
+        <h2 class="drawer-title">Quote Library</h2>
+        <span class="drawer-count">{{ totalQuotes() }} quotes</span>
+      </div>
+      <button
+        #closeButton
+        type="button"
+        class="drawer-close"
+        (click)="close.emit()"
+        aria-label="Close quote library"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </header>
+
+    <div class="drawer-body">
+      @if (loading()) {
+        <div class="drawer-skeleton" aria-label="Loading quotes">
+          @for (i of [1, 2, 3, 4, 5]; track i) {
+            <div class="skeleton-item">
+              <div class="skeleton skeleton--line skeleton--lg"></div>
+              <div class="skeleton skeleton--line skeleton--sm"></div>
+              <div class="skeleton skeleton--pill"></div>
+            </div>
+          }
+        </div>
+      } @else if (error()) {
+        <div class="drawer-error">
+          <p class="error-icon">⚠</p>
+          <p class="error-message">{{ error() }}</p>
+          <button type="button" class="btn btn--ghost" (click)="loadPage(currentPage())">
+            Try Again
+          </button>
+        </div>
+      } @else if (quotes().length === 0) {
+        <div class="drawer-empty">
+          <p>No quotes found in the library.</p>
+        </div>
+      } @else {
+        <ul class="drawer-list" role="listbox" aria-label="Quotes">
+          @for (quote of quotes(); track quote.id) {
+            <li
+              class="drawer-item"
+              (click)="onQuoteClick(quote)"
+              role="option"
+              tabindex="0"
+              (keydown.enter)="onQuoteClick(quote)"
+              (keydown.space)="onQuoteClick(quote)"
+            >
+              <blockquote class="drawer-item-text">"{{ quote.content }}"</blockquote>
+              <div class="drawer-item-meta">
+                <span class="drawer-item-author">— {{ quote.author }}</span>
+                @if (quote.category) {
+                  <span class="drawer-item-category">#{{ quote.category }}</span>
+                }
+              </div>
+            </li>
+          }
+        </ul>
+
+        <!-- Pagination -->
+        @if (totalPages() > 1) {
+          <nav class="pagination" aria-label="Quote pages">
+            <button
+              type="button"
+              class="pagination-btn"
+              (click)="loadPage(currentPage() - 1)"
+              [disabled]="currentPage() <= 1"
+              aria-label="Previous page"
+            >
+              ‹ Prev
+            </button>
+
+            @for (p of pageNumbers(); track p) {
+              <button
+                type="button"
+                class="pagination-btn"
+                [class.pagination-btn--active]="p === currentPage()"
+                (click)="loadPage(p)"
+                [attr.aria-current]="p === currentPage() ? 'page' : null"
+              >
+                {{ p }}
+              </button>
+            }
+
+            <button
+              type="button"
+              class="pagination-btn"
+              (click)="loadPage(currentPage() + 1)"
+              [disabled]="currentPage() >= totalPages()"
+              aria-label="Next page"
+            >
+              Next ›
+            </button>
+          </nav>
+        }
+      }
+    </div>
+  </aside>
+}

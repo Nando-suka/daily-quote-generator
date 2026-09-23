@@ -60,13 +60,13 @@
             the page.
           </p>
         }
-        <button class="btn btn--ghost" (click)="fetchRandomQuote()">Try Again</button>
+        <button type="button" class="btn btn--ghost" (click)="fetchRandomQuote()">Try Again</button>
       </div>
     } @else if (quote(); as q) {
-      <div class="quote-content" role="status" aria-live="polite">
-        <span class="quote-mark quote-mark--open">"</span>
+      <div class="quote-content">
+        <span class="quote-mark quote-mark--open" aria-hidden="true">"</span>
         <blockquote class="quote-text">{{ q.content }}</blockquote>
-        <span class="quote-mark quote-mark--close">"</span>
+        <span class="quote-mark quote-mark--close" aria-hidden="true">"</span>
         <div class="quote-meta">
           <span class="quote-dash">—</span>
           <cite class="quote-author">{{ q.author }}</cite>
@@ -82,6 +82,7 @@
   @if (!loading()) {
     <div class="action-row">
       <button
+        type="button"
         class="btn btn--primary"
         (click)="fetchRandomQuote()"
         [disabled]="loading()"
@@ -100,8 +101,30 @@
         New Quote
       </button>
 
+      <button
+        type="button"
+        class="btn btn--ghost"
+        (click)="openDrawer()"
+        aria-label="Browse all quotes"
+      >
+        <svg
+          class="btn-icon"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <rect x="3" y="3" width="7" height="7"></rect>
+          <rect x="14" y="3" width="7" height="7"></rect>
+          <rect x="3" y="14" width="7" height="7"></rect>
+          <rect x="14" y="14" width="7" height="7"></rect>
+        </svg>
+        Browse
+      </button>
+
       @if (quote(); as q2) {
         <button
+          type="button"
           class="btn btn--ghost"
           [class.is-copied]="copied()"
           (click)="copyToClipboard()"
@@ -121,10 +144,11 @@
         </button>
 
         <button
+          type="button"
           class="btn btn--ghost"
           (click)="shareOnTwitter()"
-          aria-label="Share on Twitter / X"
-          title="Share on Twitter/X (Ctrl+Alt+T)"
+          aria-label="Share on X"
+          title="Share on X (Ctrl+Alt+T)"
         >
           <svg class="btn-icon" viewBox="0 0 24 24" fill="currentColor">
             <path
@@ -135,6 +159,7 @@
         </button>
 
         <button
+          type="button"
           class="btn btn--ghost"
           (click)="shareOnLinkedIn()"
           aria-label="Share on LinkedIn"
@@ -149,6 +174,7 @@
         </button>
 
         <button
+          type="button"
           class="btn btn--ghost"
           (click)="shareOnFacebook()"
           aria-label="Share on Facebook"
@@ -186,4 +212,10 @@
   </p>
 </footer>
 
-<div class="toast" [class.toast--visible]="showToast()">{{ toastMessage() }}</div>
+<div class="toast" role="status" [class.toast--visible]="showToast()">{{ toastMessage() }}</div>
+
+<app-quote-drawer
+  [isOpen]="drawerOpen()"
+  (close)="closeDrawer()"
+  (quoteSelected)="onQuoteSelected($event)"
+/>
