@@ -10,14 +10,16 @@ import { z } from 'zod';
  */
 export const QuoteSchema = z.object({
   id: z.number().int().positive(),
-  content: z.string().trim().min(1, 'Quote content must not be empty'),
+  content: z.string().trim().min(1, 'Quote content must not be empty').max(1000, 'Quote content is too long'),
   author: z
     .string()
     .nullish()
-    .transform((v) => (v?.trim() ? v.trim() : 'Unknown')),
+    .transform((v) => (v?.trim() ? v.trim() : 'Unknown'))
+    .pipe(z.string().max(120, 'Author name is too long')),
   category: z
     .string()
     .nullish()
+    .catch(null)
     .transform((v) => (v?.trim() ? v.trim() : null)),
 });
 

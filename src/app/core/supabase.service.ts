@@ -172,4 +172,39 @@ export class SupabaseService {
 
     return { quotes, total, page: safePage, totalPages };
   }
+
+  /**
+   * Fetches a single quote by its ID.
+   * Returns null if the quote does not exist.
+   */
+  async getQuoteById(id: number): Promise<Quote | null> {
+    if (!this.client) {
+      throw new Error('Supabase connection not configured.');
+    }
+
+    if (!Number.isFinite(id) || id < 1) {
+      throw new Error('Invalid quote ID.');
+    }
+
+    const { data, error } = await this.client
+      .from(this.table)
+      .select('id, content, author, category')
+      .eq('id', id)
+      .single();
+
+    if (error) {
+      if ((error as { code?: string }).code === 'PGRST116') {
+        return null;
+      }
+      throw error;
+    }
+
+    try {
+      return QuoteSchema.parse(data);
+    } catch (zodErr) {
+      throw new Error(
+        `Quote validation failed: ${zodErr instanceof Error ? zodErr.message : String(zodErr)}`,
+      );
+    }
+  }
 }

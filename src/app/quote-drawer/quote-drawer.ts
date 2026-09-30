@@ -36,6 +36,8 @@ export class QuoteDrawerComponent implements OnDestroy {
   totalQuotes = signal(0);
 
   private readonly closeButtonRef = viewChild<ElementRef<HTMLButtonElement>>('closeButton');
+  private readonly drawerRef = viewChild<ElementRef<HTMLElement>>('dialog');
+  private previouslyFocusedElement: HTMLElement | null = null;
 
   pageNumbers = computed(() => {
     const total = this.totalPages();
@@ -55,18 +57,17 @@ export class QuoteDrawerComponent implements OnDestroy {
   });
 
   constructor(private readonly supabase: SupabaseService) {
-    // React to the drawer opening — the component is created once with
-    // isOpen=false, so ngOnInit alone never fetches data.
     effect(() => {
       if (this.isOpen()) {
+        this.previouslyFocusedElement = document.activeElement as HTMLElement | null;
         this.lockScroll();
         if (this.quotes().length === 0 && !this.loading() && !this.error()) {
           void this.loadPage(this.currentPage());
         }
-        // Move focus into the dialog for keyboard and screen reader users.
         queueMicrotask(() => this.closeButtonRef()?.nativeElement.focus());
       } else {
         this.unlockScroll();
+        this.restoreFocus();
       }
     });
   }
@@ -80,6 +81,11 @@ export class QuoteDrawerComponent implements OnDestroy {
     if (event.key === 'Escape' && this.isOpen()) {
       event.preventDefault();
       this.close.emit();
+      return;
+    }
+
+    if (event.key === 'Tab' && this.isOpen()) {
+      this.trapFocus(event);
     }
   }
 
@@ -87,7 +93,6 @@ export class QuoteDrawerComponent implements OnDestroy {
     if (this.loading()) return;
     const requested = Math.floor(page);
     if (!Number.isFinite(requested) || requested < 1) return;
-    // Allow the first fetch when totalPages is still unknown (0).
     if (this.totalPages() > 0 && requested > this.totalPages()) return;
 
     this.loading.set(true);
@@ -116,6 +121,38 @@ export class QuoteDrawerComponent implements OnDestroy {
   onQuoteClick(quote: Quote): void {
     this.quoteSelected.emit(quote);
     this.close.emit();
+  }
+
+  private trapFocus(event: KeyboardEvent): void {
+    const drawer = this.drawerRef()?.nativeElement;
+    if (!drawer) return;
+
+    const focusableElements = drawer.querySelectorAll<HTMLElement>(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+    );
+    if (focusableElements.length === 0) return;
+
+    const firstElement = focusableElements[0]!;
+    const lastElement = focusableElements[focusableElements.length - 1]!;
+
+    if (event.shiftKey) {
+      if (document.activeElement === firstElement) {
+        event.preventDefault();
+        lastElement.focus();
+      }
+    } else {
+      if (document.activeElement === lastElement) {
+        event.preventDefault();
+        firstElement.focus();
+      }
+    }
+  }
+
+  private restoreFocus(): void {
+    if (this.previouslyFocusedElement) {
+      this.previouslyFocusedElement.focus();
+      this.previouslyFocusedElement = null;
+    }
   }
 
   private lockScroll(): void {
