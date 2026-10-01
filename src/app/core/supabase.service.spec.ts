@@ -353,4 +353,137 @@ describe('SupabaseService (not configured)', () => {
       'Supabase connection not configured',
     );
   });
+
+  it('should throw when getQuoteById is called without configuration', async () => {
+    await expect(service.getQuoteById(1)).rejects.toThrow('Supabase connection not configured');
+  });
+});
+
+describe('SupabaseService — getQuoteById', () => {
+  let service: SupabaseService;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.useFakeTimers();
+
+    TestBed.configureTestingModule({
+      providers: [configuredProvider],
+    });
+    service = TestBed.inject(SupabaseService);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('should return a quote when found', async () => {
+    const mockSingle = vi.fn().mockResolvedValue({
+      data: { id: 1, content: 'Test quote.', author: 'Author', category: 'test' },
+      error: null,
+    });
+    const mockEq = vi.fn().mockReturnValue({ single: mockSingle });
+    const mockSelect = vi.fn().mockReturnValue({ eq: mockEq });
+    mockFrom.mockReturnValue({ select: mockSelect });
+
+    const result = await service.getQuoteById(1);
+
+    expect(result).not.toBeNull();
+    expect(result!.id).toBe(1);
+    expect(result!.content).toBe('Test quote.');
+    expect(mockEq).toHaveBeenCalledWith('id', 1);
+  });
+
+  it('should return null when quote is not found (PGRST116)', async () => {
+    const mockSingle = vi.fn().mockResolvedValue({
+      data: null,
+      error: { code: 'PGRST116' },
+    });
+    const mockEq = vi.fn().mockReturnValue({ single: mockSingle });
+    const mockSelect = vi.fn().mockReturnValue({ eq: mockEq });
+    mockFrom.mockReturnValue({ select: mockSelect });
+
+    const result = await service.getQuoteById(999);
+
+    expect(result).toBeNull();
+  });
+
+  it('should throw on invalid ID', async () => {
+    await expect(service.getQuoteById(-1)).rejects.toThrow('Invalid quote ID');
+    await expect(service.getQuoteById(0)).rejects.toThrow('Invalid quote ID');
+    await expect(service.getQuoteById(NaN)).rejects.toThrow('Invalid quote ID');
+  });
+
+  it('should throw on non-PGRST116 errors', async () => {
+    const mockSingle = vi.fn().mockResolvedValue({
+      data: null,
+      error: { code: '42P01', message: 'relation does not exist' },
+    });
+    const mockEq = vi.fn().mockReturnValue({ single: mockSingle });
+    const mockSelect = vi.fn().mockReturnValue({ eq: mockEq });
+    mockFrom.mockReturnValue({ select: mockSelect });
+
+    await expect(service.getQuoteById(1)).rejects.toThrow();
+  });
+
+  it('should throw on Zod validation failure', async () => {
+    const mockSingle = vi.fn().mockResolvedValue({
+      data: { id: 'not-a-number', content: '' },
+      error: null,
+    });
+    const mockEq = vi.fn().mockReturnValue({ single: mockSingle });
+    const mockSelect = vi.fn().mockReturnValue({ eq: mockEq });
+    mockFrom.mockReturnValue({ select: mockSelect });
+
+    await expect(service.getQuoteById(1)).rejects.toThrow('Quote validation failed');
+  });
+});
+
+describe('SupabaseService — withRetry', () => {
+  let service: SupabaseService;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.useFakeTimers();
+
+    TestBed.configureTestingModule({
+      providers: [configuredProvider],
+    });
+    service = TestBed.inject(SupabaseService);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('should retry on failure and eventually succeed', async () => {
+    let attempts = 0;
+    const operation = vi.fn().mockImplementation(async () => {
+      attempts++;
+      if (attempts < 3) {
+        throw new Error('Temporary failure');
+      }
+      return 'success';
+    });
+
+    const result = await (service as any).withRetry(operation, 3);
+
+    expect(result).toBe('success');
+    expect(attempts).toBe(3);
+  });
+
+  it('should throw after max retries exceeded', async () => {
+    const operation = vi.fn().mockRejectedValue(new Error('Persistent failure'));
+
+    await expect((service as any).withRetry(operation, 2)).rejects.toThrow('Persistent failure');
+    expect(operation).toHaveBeenCalledTimes(3);
+  });
+
+  it('should not retry on success', async () => {
+    const operation = vi.fn().mockResolvedValue('immediate success');
+
+    const result = await (service as any).withRetry(operation, 3);
+
+    expect(result).toBe('immediate success');
+    expect(operation).toHaveBeenCalledTimes(1);
+  });
 });

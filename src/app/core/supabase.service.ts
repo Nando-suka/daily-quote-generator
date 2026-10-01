@@ -21,6 +21,8 @@ export class SupabaseService {
   private countRequest: Promise<number> | null = null;
   private static readonly COUNT_TTL_MS = 60_000;
   private static readonly MAX_PAGE_SIZE = 100;
+  private static readonly MAX_RETRIES = 3;
+  private static readonly RETRY_DELAY_MS = 1000;
 
   constructor(@Inject(SUPABASE_CONFIG) private readonly config: SupabaseConfig) {
     this.isConfigured = Boolean(
@@ -78,6 +80,22 @@ export class SupabaseService {
   clearCountCache(): void {
     this.countCache = null;
     this.countRequest = null;
+  }
+
+  private async withRetry<T>(operation: () => Promise<T>, retries = SupabaseService.MAX_RETRIES): Promise<T> {
+    let lastError: unknown;
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      try {
+        return await operation();
+      } catch (err) {
+        lastError = err;
+        if (attempt < retries) {
+          const delay = SupabaseService.RETRY_DELAY_MS * Math.pow(2, attempt);
+          await new Promise((resolve) => setTimeout(resolve, delay));
+        }
+      }
+    }
+    throw lastError;
   }
 
   /**

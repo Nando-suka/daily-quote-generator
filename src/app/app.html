@@ -9,7 +9,7 @@
 <header class="site-header">
   <div class="header-inner">
     <span class="logo-mark">✦</span>
-    <span class="logo-text">DailyQuote</span>
+    <span class="logo-text">Daily Quote</span>
     <span class="logo-badge">v2.0 · Angular</span>
   </div>
 </header>
@@ -62,16 +62,16 @@
         }
         <button type="button" class="btn btn--ghost" (click)="fetchRandomQuote()">Try Again</button>
       </div>
-    } @else if (quote(); as q) {
+    } @else {
       <div class="quote-content">
         <span class="quote-mark quote-mark--open" aria-hidden="true">"</span>
-        <blockquote class="quote-text">{{ q.content }}</blockquote>
+        <blockquote class="quote-text">{{ quote()!.content }}</blockquote>
         <span class="quote-mark quote-mark--close" aria-hidden="true">"</span>
         <div class="quote-meta">
           <span class="quote-dash">—</span>
-          <cite class="quote-author">{{ q.author }}</cite>
-          @if (q.category) {
-            <span class="quote-category">#{{ q.category }}</span>
+          <cite class="quote-author">{{ quote()!.author }}</cite>
+          @if (quote()!.category) {
+            <span class="quote-category">#{{ quote()!.category }}</span>
           }
         </div>
       </div>
@@ -122,7 +122,7 @@
         Browse
       </button>
 
-      @if (quote(); as q2) {
+      @if (quote(); as q) {
         <button
           type="button"
           class="btn btn--ghost"

@@ -1,11 +1,13 @@
-import { ApplicationConfig, inject, provideAppInitializer, provideBrowserGlobalErrorListeners } from '@angular/core';
+import { ApplicationConfig, ErrorHandler, inject, provideAppInitializer, provideBrowserGlobalErrorListeners } from '@angular/core';
 import { SUPABASE_CONFIG } from './core/supabase.config';
 import { SupabaseService } from './core/supabase.service';
+import { GlobalErrorHandler } from './core/error-handler';
 import { environment } from '../environments/environment';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
+    { provide: ErrorHandler, useClass: GlobalErrorHandler },
     provideAppInitializer(async () => {
       const supabase = inject(SupabaseService);
       if (!supabase.isReady()) {
