@@ -31,6 +31,30 @@
 
   <p class="date-chip">{{ today() }}</p>
 
+  <!-- Category Filter -->
+  @if (categories().length > 0) {
+    <div class="category-filter" role="group" aria-label="Filter quotes by category">
+      <button
+        type="button"
+        class="category-chip"
+        [class.category-chip--active]="selectedCategory() === null"
+        (click)="selectCategory(null)"
+      >
+        All
+      </button>
+      @for (cat of categories(); track cat) {
+        <button
+          type="button"
+          class="category-chip"
+          [class.category-chip--active]="selectedCategory() === cat"
+          (click)="selectCategory(cat)"
+        >
+          {{ cat }}
+        </button>
+      }
+    </div>
+  }
+
   <!-- Quote Card -->
   <div
     class="quote-card"

@@ -28,6 +28,8 @@ export class App implements OnInit, OnDestroy {
   toastMessage = signal('');
   today = signal(this.formatDate(new Date()));
   drawerOpen = signal(false);
+  categories = signal<string[]>([]);
+  selectedCategory = signal<string | null>(null);
 
   private toastTimer: ReturnType<typeof setTimeout> | undefined;
   private copiedTimer: ReturnType<typeof setTimeout> | undefined;
@@ -35,9 +37,9 @@ export class App implements OnInit, OnDestroy {
   constructor(private readonly supabase: SupabaseService) {}
 
   ngOnInit(): void {
-    // Fire in parallel; count is cached so second getCount is cheap
     void this.fetchTotalCount();
     void this.fetchRandomQuote();
+    void this.fetchCategories();
   }
 
   ngOnDestroy(): void {
@@ -46,12 +48,15 @@ export class App implements OnInit, OnDestroy {
   }
 
   async fetchRandomQuote(): Promise<void> {
-    if (this.loading()) return; // guard against rapid clicks / parallel fetches
+    if (this.loading()) return;
     this.loading.set(true);
     this.error.set(null);
 
     try {
-      const q = await this.supabase.getRandomQuote();
+      const category = this.selectedCategory();
+      const q = category
+        ? await this.supabase.getRandomQuoteByCategory(category)
+        : await this.supabase.getRandomQuote();
       this.quote.set(q);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -67,6 +72,22 @@ export class App implements OnInit, OnDestroy {
       }
     } finally {
       this.loading.set(false);
+    }
+  }
+
+  async selectCategory(category: string | null): Promise<void> {
+    this.selectedCategory.set(category);
+    await this.fetchRandomQuote();
+  }
+
+  private async fetchCategories(): Promise<void> {
+    try {
+      const cats = await this.supabase.getCategories();
+      this.categories.set(cats);
+    } catch (err) {
+      if (!environment.production) {
+        console.warn('[App] Could not fetch categories:', err);
+      }
     }
   }
 

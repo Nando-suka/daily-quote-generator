@@ -225,4 +225,124 @@ export class SupabaseService {
       );
     }
   }
+
+  /**
+   * Fetches all distinct categories from the quotes table.
+   * Returns an empty array if no categories exist.
+   */
+  async getCategories(): Promise<string[]> {
+    if (!this.client) {
+      throw new Error('Supabase connection not configured.');
+    }
+
+    const { data, error } = await this.client
+      .from(this.table)
+      .select('category')
+      .not('category', 'is', null);
+
+    if (error) throw error;
+
+    const categories = new Set<string>();
+    if (data) {
+      for (const row of data) {
+        const cat = row.category?.trim();
+        if (cat) {
+          categories.add(cat);
+        }
+      }
+    }
+
+    return Array.from(categories).sort();
+  }
+
+  /**
+   * Fetches a random quote filtered by category.
+   * Falls back to any random quote if the category has no quotes.
+   */
+  async getRandomQuoteByCategory(category: string): Promise<Quote> {
+    if (!this.client) {
+      throw new Error('Supabase connection not configured.');
+    }
+
+    const { data, error } = await this.client
+      .from(this.table)
+      .select('id, content, author, category')
+      .eq('category', category)
+      .order('id', { ascending: true });
+
+    if (error) throw error;
+
+    if (!data || data.length === 0) {
+      throw new Error(`No quotes found in category "${category}".`);
+    }
+
+    const randomIndex = Math.floor(Math.random() * data.length);
+    const row = data[randomIndex];
+
+    try {
+      return QuoteSchema.parse(row);
+    } catch (zodErr) {
+      throw new Error(
+        `Quote validation failed: ${zodErr instanceof Error ? zodErr.message : String(zodErr)}`,
+      );
+    }
+  }
+
+  /**
+   * Fetches paginated quotes filtered by category.
+   */
+  async getQuotesByCategory(
+    category: string,
+    page: number,
+    pageSize: number,
+  ): Promise<PaginatedQuotes> {
+    if (!this.client) {
+      throw new Error('Supabase connection not configured.');
+    }
+
+    const safePageSize = Number.isFinite(pageSize)
+      ? Math.max(1, Math.min(Math.floor(pageSize), SupabaseService.MAX_PAGE_SIZE))
+      : 5;
+
+    const { count, error: countError } = await this.client
+      .from(this.table)
+      .select('*', { count: 'exact', head: true })
+      .eq('category', category);
+
+    if (countError) throw countError;
+
+    const total = count ?? 0;
+    if (total === 0) {
+      return { quotes: [], total: 0, page: 1, totalPages: 0 };
+    }
+
+    const totalPages = Math.ceil(total / safePageSize);
+    const requestedPage = Number.isFinite(page) ? Math.floor(page) : 1;
+    const safePage = Math.max(1, Math.min(requestedPage, totalPages));
+    const offset = (safePage - 1) * safePageSize;
+
+    const { data, error } = await this.client
+      .from(this.table)
+      .select('id, content, author, category')
+      .eq('category', category)
+      .order('id', { ascending: true })
+      .range(offset, offset + safePageSize - 1);
+
+    if (error) throw error;
+
+    const quotes: Quote[] = [];
+    if (data) {
+      for (const row of data) {
+        try {
+          quotes.push(QuoteSchema.parse(row));
+        } catch (zodErr) {
+          throw new Error(
+            `Quote validation failed: ${zodErr instanceof Error ? zodErr.message : String(zodErr)}`,
+          );
+        }
+      }
+    }
+
+    return { quotes, total, page: safePage, totalPages };
+  }
 }

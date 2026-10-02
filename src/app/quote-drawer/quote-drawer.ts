@@ -27,6 +27,7 @@ export class QuoteDrawerComponent implements OnDestroy {
   isOpen = input.required<boolean>();
   quoteSelected = output<Quote>();
   close = output<void>();
+  category = input<string | null>(null);
 
   quotes = signal<Quote[]>([]);
   loading = signal(false);
@@ -99,7 +100,10 @@ export class QuoteDrawerComponent implements OnDestroy {
     this.error.set(null);
 
     try {
-      const result = await this.supabase.getQuotesPaginated(requested, PAGE_SIZE);
+      const category = this.category();
+      const result = category
+        ? await this.supabase.getQuotesByCategory(category, requested, PAGE_SIZE)
+        : await this.supabase.getQuotesPaginated(requested, PAGE_SIZE);
       this.quotes.set(result.quotes);
       this.currentPage.set(result.page);
       this.totalPages.set(result.totalPages);

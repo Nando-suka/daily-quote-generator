@@ -487,3 +487,201 @@ describe('SupabaseService — withRetry', () => {
     expect(operation).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('SupabaseService — getCategories', () => {
+  let service: SupabaseService;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.useFakeTimers();
+
+    TestBed.configureTestingModule({
+      providers: [configuredProvider],
+    });
+    service = TestBed.inject(SupabaseService);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('should return sorted distinct categories', async () => {
+    const mockSelect = vi.fn().mockResolvedValue({
+      data: [
+        { category: 'work' },
+        { category: 'life' },
+        { category: 'work' },
+        { category: null },
+        { category: 'mindset' },
+      ],
+      error: null,
+    });
+    mockFrom.mockReturnValue({ select: mockSelect });
+
+    const result = await service.getCategories();
+
+    expect(result).toEqual(['life', 'mindset', 'work']);
+  });
+
+  it('should return empty array when no categories exist', async () => {
+    const mockSelect = vi.fn().mockResolvedValue({
+      data: [{ category: null }, { category: null }],
+      error: null,
+    });
+    mockFrom.mockReturnValue({ select: mockSelect });
+
+    const result = await service.getCategories();
+
+    expect(result).toEqual([]);
+  });
+
+  it('should throw on Supabase error', async () => {
+    const mockSelect = vi.fn().mockResolvedValue({
+      data: null,
+      error: new Error('query failed'),
+    });
+    mockFrom.mockReturnValue({ select: mockSelect });
+
+    await expect(service.getCategories()).rejects.toThrow('query failed');
+  });
+});
+
+describe('SupabaseService — getRandomQuoteByCategory', () => {
+  let service: SupabaseService;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.useFakeTimers();
+
+    TestBed.configureTestingModule({
+      providers: [configuredProvider],
+    });
+    service = TestBed.inject(SupabaseService);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('should return a quote from the specified category', async () => {
+    const mockOrder = vi.fn().mockResolvedValue({
+      data: [
+        { id: 1, content: 'Quote 1', author: 'Author 1', category: 'work' },
+        { id: 2, content: 'Quote 2', author: 'Author 2', category: 'work' },
+      ],
+      error: null,
+    });
+    const mockEq = vi.fn().mockReturnValue({ order: mockOrder });
+    const mockSelect = vi.fn().mockReturnValue({ eq: mockEq });
+    mockFrom.mockReturnValue({ select: mockSelect });
+
+    const result = await service.getRandomQuoteByCategory('work');
+
+    expect(result.category).toBe('work');
+    expect(mockEq).toHaveBeenCalledWith('category', 'work');
+  });
+
+  it('should throw when no quotes exist in category', async () => {
+    const mockOrder = vi.fn().mockResolvedValue({
+      data: [],
+      error: null,
+    });
+    const mockEq = vi.fn().mockReturnValue({ order: mockOrder });
+    const mockSelect = vi.fn().mockReturnValue({ eq: mockEq });
+    mockFrom.mockReturnValue({ select: mockSelect });
+
+    await expect(service.getRandomQuoteByCategory('nonexistent')).rejects.toThrow(
+      'No quotes found in category',
+    );
+  });
+
+  it('should throw on Supabase error', async () => {
+    const mockOrder = vi.fn().mockResolvedValue({
+      data: null,
+      error: new Error('query failed'),
+    });
+    const mockEq = vi.fn().mockReturnValue({ order: mockOrder });
+    const mockSelect = vi.fn().mockReturnValue({ eq: mockEq });
+    mockFrom.mockReturnValue({ select: mockSelect });
+
+    await expect(service.getRandomQuoteByCategory('work')).rejects.toThrow('query failed');
+  });
+});
+
+describe('SupabaseService — getQuotesByCategory', () => {
+  let service: SupabaseService;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.useFakeTimers();
+
+    TestBed.configureTestingModule({
+      providers: [configuredProvider],
+    });
+    service = TestBed.inject(SupabaseService);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('should return paginated quotes for a category', async () => {
+    const mockCountSelect = vi.fn().mockResolvedValue({ count: 10, error: null });
+    const mockCount = vi.fn().mockReturnValue({ select: mockCountSelect });
+
+    const mockRange = vi.fn().mockResolvedValue({
+      data: [
+        { id: 1, content: 'Quote 1', author: 'Author 1', category: 'work' },
+        { id: 2, content: 'Quote 2', author: 'Author 2', category: 'work' },
+      ],
+      error: null,
+    });
+    const mockOrder = vi.fn().mockReturnValue({ range: mockRange });
+    const mockEq = vi.fn().mockReturnValue({ order: mockOrder });
+    const mockSelect = vi.fn().mockReturnValue({ eq: mockEq });
+
+    mockFrom
+      .mockReturnValueOnce({ select: mockCount })
+      .mockReturnValueOnce({ select: mockSelect });
+
+    const result = await service.getQuotesByCategory('work', 1, 5);
+
+    expect(result.quotes).toHaveLength(2);
+    expect(result.total).toBe(10);
+    expect(result.page).toBe(1);
+    expect(result.totalPages).toBe(2);
+  });
+
+  it('should return empty result when category has no quotes', async () => {
+    const mockCountSelect = vi.fn().mockResolvedValue({ count: 0, error: null });
+    const mockCount = vi.fn().mockReturnValue({ select: mockCountSelect });
+    mockFrom.mockReturnValueOnce({ select: mockCount });
+
+    const result = await service.getQuotesByCategory('nonexistent', 1, 5);
+
+    expect(result.quotes).toHaveLength(0);
+    expect(result.total).toBe(0);
+    expect(result.totalPages).toBe(0);
+  });
+
+  it('should clamp page to valid range', async () => {
+    const mockCountSelect = vi.fn().mockResolvedValue({ count: 3, error: null });
+    const mockCount = vi.fn().mockReturnValue({ select: mockCountSelect });
+
+    const mockRange = vi.fn().mockResolvedValue({
+      data: [{ id: 1, content: 'Quote 1', author: 'Author 1', category: 'work' }],
+      error: null,
+    });
+    const mockOrder = vi.fn().mockReturnValue({ range: mockRange });
+    const mockEq = vi.fn().mockReturnValue({ order: mockOrder });
+    const mockSelect = vi.fn().mockReturnValue({ eq: mockEq });
+
+    mockFrom
+      .mockReturnValueOnce({ select: mockCount })
+      .mockReturnValueOnce({ select: mockSelect });
+
+    const result = await service.getQuotesByCategory('work', 99, 5);
+
+    expect(result.page).toBe(1);
+  });
+});
