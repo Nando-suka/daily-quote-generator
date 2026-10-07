@@ -1,0 +1,52 @@
+<nav aria-label="Breadcrumb">
+  <a class="btn btn--ghost" routerLink="/" data-testid="back-home-btn">← All quotes</a>
+</nav>
+
+@if (quote(); as q) {
+  <p class="date-chip" data-testid="quote-id-chip">Quote #{{ q.id }}</p>
+}
+
+<app-quote-card
+  [quote]="quote()"
+  [loading]="loading()"
+  [error]="error()"
+  [copied]="copied()"
+  [linkCopied]="linkCopied()"
+  [showNewQuote]="false"
+  (retry)="loadQuote()"
+  (newQuote)="newRandomQuote()"
+  (copy)="copyToClipboard()"
+  (copyLink)="copyPermalink()"
+  (shareX)="shareOnTwitter()"
+  (shareLinkedIn)="shareOnLinkedIn()"
+  (shareFacebook)="shareOnFacebook()"
+/>
+
+@if (!loading() && !error() && quote()) {
+  <div class="action-row">
+    <button
+      type="button"
+      class="btn btn--primary"
+      (click)="newRandomQuote()"
+      data-testid="surprise-me-btn"
+    >
+      Surprise me
+    </button>
+    <button
+      type="button"
+      class="btn btn--ghost"
+      (click)="openDrawer()"
+      data-testid="drawer-open-btn"
+    >
+      Browse
+    </button>
+  </div>
+}
+
+<div class="toast" role="status" [class.toast--visible]="showToast()">{{ toastMessage() }}</div>
+
+<app-quote-drawer
+  [isOpen]="drawerOpen()"
+  (close)="closeDrawer()"
+  (quoteSelected)="onQuoteSelected($event)"
+/>

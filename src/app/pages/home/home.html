@@ -1,0 +1,107 @@
+<section class="hero-copy" aria-label="Quick introduction">
+  <p class="eyebrow">Daily inspiration</p>
+  <h1>Find a thoughtful quote in seconds.</h1>
+  <p class="hero-subtitle">
+    Refresh your mood with a new line of encouragement, then copy or share it in one tap.
+  </p>
+  <div class="helper-pills" aria-label="App highlights">
+    <span class="hero-pill">Fresh perspective</span>
+    <span class="hero-pill">Easy to copy</span>
+    <span class="hero-pill">Ready to share</span>
+  </div>
+</section>
+
+<p class="date-chip">{{ today() }}</p>
+
+<!-- Category Filter -->
+@if (categories().length > 0) {
+  <div
+    class="category-filter"
+    role="group"
+    aria-label="Filter quotes by category"
+    data-testid="category-filter"
+  >
+    <button
+      type="button"
+      class="category-chip"
+      [class.category-chip--active]="selectedCategory() === null"
+      (click)="selectCategory(null)"
+    >
+      All
+    </button>
+    @for (cat of categories(); track cat) {
+      <button
+        type="button"
+        class="category-chip"
+        [class.category-chip--active]="selectedCategory() === cat"
+        (click)="selectCategory(cat)"
+      >
+        {{ cat }}
+      </button>
+    }
+  </div>
+}
+
+<app-quote-card
+  [quote]="quote()"
+  [loading]="loading()"
+  [error]="error()"
+  [copied]="copied()"
+  [linkCopied]="linkCopied()"
+  [showNewQuote]="true"
+  (retry)="fetchRandomQuote()"
+  (newQuote)="fetchRandomQuote()"
+  (copy)="copyToClipboard()"
+  (copyLink)="copyPermalink()"
+  (shareX)="shareOnTwitter()"
+  (shareLinkedIn)="shareOnLinkedIn()"
+  (shareFacebook)="shareOnFacebook()"
+/>
+
+<!-- Browse -->
+@if (!loading()) {
+  <div class="action-row">
+    <button
+      type="button"
+      class="btn btn--ghost"
+      (click)="openDrawer()"
+      aria-label="Browse all quotes"
+      data-testid="drawer-open-btn"
+    >
+      <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="3" y="3" width="7" height="7"></rect>
+        <rect x="14" y="3" width="7" height="7"></rect>
+        <rect x="3" y="14" width="7" height="7"></rect>
+        <rect x="14" y="14" width="7" height="7"></rect>
+      </svg>
+      Browse
+    </button>
+
+    @if (quote(); as q) {
+      <a class="btn btn--ghost" [routerLink]="['/quote', q.id]" data-testid="permalink-btn">
+        Permalink
+      </a>
+    }
+  </div>
+
+  @if (quote()) {
+    <p class="micro-tip">Tip: refresh anytime for a new spark of inspiration.</p>
+  }
+
+  @if (totalQuotes() > 0) {
+    <div class="stats-bar">
+      <span>{{ totalQuotes() }} quotes in the library</span>
+      <span class="stats-dot">·</span>
+      <span>Quote #{{ quote()?.id }}</span>
+    </div>
+  }
+}
+
+<div class="toast" role="status" [class.toast--visible]="showToast()">{{ toastMessage() }}</div>
+
+<app-quote-drawer
+  [isOpen]="drawerOpen()"
+  [category]="selectedCategory()"
+  (close)="closeDrawer()"
+  (quoteSelected)="onQuoteSelected($event)"
+/>

@@ -1,12 +1,14 @@
 import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { App } from './app';
 import { SUPABASE_CONFIG } from './core/supabase.config';
 
-describe('App', () => {
+describe('App (shell)', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [App],
       providers: [
+        provideRouter([]),
         {
           provide: SUPABASE_CONFIG,
           useValue: {
@@ -19,40 +21,16 @@ describe('App', () => {
     }).compileComponents();
   });
 
-  it('should create the app', () => {
+  it('should create the app shell', () => {
     const fixture = TestBed.createComponent(App);
-    const app = fixture.componentInstance;
-    expect(app).toBeTruthy();
+    expect(fixture.componentInstance).toBeTruthy();
   });
 
-  it('should render hero title', async () => {
+  it('should render the header with a home link', () => {
     const fixture = TestBed.createComponent(App);
-    await fixture.whenStable();
+    fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('h1')?.textContent).toContain('Find a thoughtful quote');
-  });
-
-  it('should have openDrawer and closeDrawer methods', async () => {
-    const fixture = TestBed.createComponent(App);
-    await fixture.whenStable();
-
-    expect(fixture.componentInstance.drawerOpen()).toBe(false);
-
-    fixture.componentInstance.openDrawer();
-    expect(fixture.componentInstance.drawerOpen()).toBe(true);
-
-    fixture.componentInstance.closeDrawer();
-    expect(fixture.componentInstance.drawerOpen()).toBe(false);
-  });
-
-  it('should load quote into main view from drawer', async () => {
-    const fixture = TestBed.createComponent(App);
-    await fixture.whenStable();
-
-    const quote = { id: 5, content: 'Selected quote.', author: 'Author', category: 'life' };
-    fixture.componentInstance.onQuoteSelected(quote);
-
-    expect(fixture.componentInstance.quote()?.id).toBe(5);
-    expect(fixture.componentInstance.quote()?.content).toBe('Selected quote.');
+    expect(compiled.querySelector('.logo-text')?.textContent).toContain('Daily Quote');
+    expect(compiled.querySelector('router-outlet')).toBeTruthy();
   });
 });

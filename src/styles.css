@@ -168,6 +168,17 @@ a:hover {
   margin: 0 auto;
 }
 
+.logo-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  color: inherit;
+}
+
+.logo-link:hover {
+  color: inherit;
+}
+
 .logo-mark {
   color: var(--color-accent);
   font-size: 1.1rem;
