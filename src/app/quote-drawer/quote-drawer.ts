@@ -35,6 +35,10 @@ export class QuoteDrawerComponent implements OnDestroy {
   currentPage = signal(1);
   totalPages = signal(0);
   totalQuotes = signal(0);
+  showToast = signal(false);
+  toastMessage = signal('');
+  selectedQuote = signal<Quote | null>(null);
+  private toastTimer: ReturnType<typeof setTimeout> | undefined;
 
   private readonly closeButtonRef = viewChild<ElementRef<HTMLButtonElement>>('closeButton');
   private readonly drawerRef = viewChild<ElementRef<HTMLElement>>('dialog');
@@ -124,7 +128,37 @@ export class QuoteDrawerComponent implements OnDestroy {
 
   onQuoteClick(quote: Quote): void {
     this.quoteSelected.emit(quote);
+    this.selectedQuote.set(quote);
     this.close.emit();
+    this.showToastMsg(`Selected quote #${quote.id}`);
+  }
+
+  async shareOnTwitter(): Promise<void> {
+    const q = this.selectedQuote();
+    if (!q) return;
+    const tweetText = encodeURIComponent(`"${q.content}" — ${q.author}\n\n#DailyQuote #Motivation`);
+    this.openShareWindow(`https://x.com/intent/post?text=${tweetText}`);
+    this.showToastMsg('Shared to X ✓');
+  }
+
+  async shareOnLinkedIn(): Promise<void> {
+    const q = this.selectedQuote();
+    if (!q) return;
+    const quoteUrl = window.location.origin + '/quote/' + q.id;
+    this.openShareWindow(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(quoteUrl)}`);
+    this.showToastMsg('Shared to LinkedIn ✓');
+  }
+
+  async shareOnFacebook(): Promise<void> {
+    const q = this.selectedQuote();
+    if (!q) return;
+    const quoteUrl = window.location.origin + '/quote/' + q.id;
+    this.openShareWindow(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(quoteUrl)}`);
+    this.showToastMsg('Shared to Facebook ✓');
+  }
+
+  openShareWindow(url: string): Window | null {
+    return window.open(url, '_blank', 'noopener,noreferrer');
   }
 
   private trapFocus(event: KeyboardEvent): void {
@@ -165,5 +199,12 @@ export class QuoteDrawerComponent implements OnDestroy {
 
   private unlockScroll(): void {
     document.body.style.overflow = '';
+  }
+
+  private showToastMsg(message: string, duration = 2500): void {
+    this.toastMessage.set(message);
+    this.showToast.set(true);
+    if (this.toastTimer) clearTimeout(this.toastTimer);
+    this.toastTimer = setTimeout(() => this.showToast.set(false), duration);
   }
 }
