@@ -1,6 +1,6 @@
-import { ErrorHandler, Injectable } from '@angular/core';
+import { ErrorHandler, Service } from '@angular/core';
 
-@Injectable()
+@Service()
 export class GlobalErrorHandler implements ErrorHandler {
   handleError(error: unknown): void {
     const message = error instanceof Error ? error.message : String(error);
@@ -12,8 +12,8 @@ export class GlobalErrorHandler implements ErrorHandler {
       console.error('[GlobalErrorHandler] Stack:', stack);
     }
 
-    if (typeof window !== 'undefined' && (window as any).Sentry) {
-      (window as any).Sentry.captureException(error);
+    if (typeof window !== 'undefined' && (window as unknown as { Sentry?: { captureException: (e: unknown) => void } }).Sentry) {
+      (window as unknown as { Sentry: { captureException: (e: unknown) => void } }).Sentry.captureException(error);
     }
   }
 }

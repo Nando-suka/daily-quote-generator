@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@angular/core';
+import { Service, signal, Signal, computed } from '@angular/core';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { Quote, QuoteSchema } from './quote.model';
 import { SUPABASE_CONFIG, SupabaseConfig } from './supabase.config';
@@ -10,11 +10,12 @@ export interface PaginatedQuotes {
   totalPages: number;
 }
 
-@Injectable({ providedIn: 'root' })
+@Service()
 export class SupabaseService {
   private readonly client: SupabaseClient | null;
   private readonly isConfigured: boolean;
   private readonly table = 'quotes';
+  private readonly config: SupabaseConfig;
 
   /** Simple in-memory cache for count to avoid double queries on boot */
   private countCache: { value: number; expiresAt: number } | null = null;
@@ -24,16 +25,17 @@ export class SupabaseService {
   private static readonly MAX_RETRIES = 3;
   private static readonly RETRY_DELAY_MS = 1000;
 
-  constructor(@Inject(SUPABASE_CONFIG) private readonly config: SupabaseConfig) {
+  constructor() {
+    this.config = inject(SUPABASE_CONFIG);
     this.isConfigured = Boolean(
-      config.supabaseUrl &&
-      config.supabaseUrl !== 'YOUR_SUPABASE_URL' &&
-      config.supabaseAnonKey &&
-      config.supabaseAnonKey !== 'YOUR_SUPABASE_ANON_KEY',
+      this.config.supabaseUrl &&
+      this.config.supabaseUrl !== 'YOUR_SUPABASE_URL' &&
+      this.config.supabaseAnonKey &&
+      this.config.supabaseAnonKey !== 'YOUR_SUPABASE_ANON_KEY',
     );
 
     this.client = this.isConfigured
-      ? createClient(config.supabaseUrl, config.supabaseAnonKey)
+      ? createClient(this.config.supabaseUrl, this.config.supabaseAnonKey)
       : null;
   }
 

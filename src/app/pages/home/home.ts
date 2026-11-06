@@ -1,7 +1,6 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  HostListener,
   OnDestroy,
   OnInit,
   signal,
@@ -19,6 +18,9 @@ import { environment } from '../../../environments/environment';
   imports: [QuoteCardComponent, QuoteDrawerComponent, RouterLink],
   templateUrl: './home.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '[@keydown]': 'handleKeyDown($event)',
+  },
 })
 export class HomeComponent implements OnInit, OnDestroy {
   quote = signal<Quote | null>(null);
@@ -189,9 +191,14 @@ export class HomeComponent implements OnInit, OnDestroy {
       month: 'long',
       day: 'numeric',
     });
+    return date.toLocaleDateString(undefined, {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
   }
 
-  @HostListener('document:keydown', ['$event'])
   handleKeyDown(event: KeyboardEvent): void {
     const key = event.key.toLowerCase();
 

@@ -4,7 +4,6 @@ import {
   computed,
   effect,
   ElementRef,
-  HostListener,
   input,
   OnDestroy,
   output,
@@ -13,6 +12,7 @@ import {
 } from '@angular/core';
 import { Quote } from '../core/quote.model';
 import { SupabaseService } from '../core/supabase.service';
+import { ShareService } from '../core/share.service';
 
 const PAGE_SIZE = 5;
 const MAX_PAGE_BUTTONS = 5;
@@ -22,6 +22,9 @@ const MAX_PAGE_BUTTONS = 5;
   templateUrl: './quote-drawer.html',
   styleUrl: './quote-drawer.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '(document:keydown)': 'onKeyDown($event)',
+  },
 })
 export class QuoteDrawerComponent implements OnDestroy {
   isOpen = input.required<boolean>();
@@ -61,7 +64,7 @@ export class QuoteDrawerComponent implements OnDestroy {
     return pages;
   });
 
-  constructor(private readonly supabase: SupabaseService) {
+  constructor(private readonly supabase: SupabaseService, private readonly share: ShareService) {
     effect(() => {
       if (this.isOpen()) {
         this.previouslyFocusedElement = document.activeElement as HTMLElement | null;
@@ -81,7 +84,6 @@ export class QuoteDrawerComponent implements OnDestroy {
     this.unlockScroll();
   }
 
-  @HostListener('document:keydown', ['$event'])
   onKeyDown(event: KeyboardEvent): void {
     if (event.key === 'Escape' && this.isOpen()) {
       event.preventDefault();
@@ -136,29 +138,26 @@ export class QuoteDrawerComponent implements OnDestroy {
   async shareOnTwitter(): Promise<void> {
     const q = this.selectedQuote();
     if (!q) return;
-    const tweetText = encodeURIComponent(`"${q.content}" — ${q.author}\n\n#DailyQuote #Motivation`);
-    this.openShareWindow(`https://x.com/intent/post?text=${tweetText}`);
+    this.share.openShareWindow(this.share.buildTweetIntent(q));
     this.showToastMsg('Shared to X ✓');
   }
 
   async shareOnLinkedIn(): Promise<void> {
     const q = this.selectedQuote();
     if (!q) return;
-    const quoteUrl = window.location.origin + '/quote/' + q.id;
-    this.openShareWindow(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(quoteUrl)}`);
+    this.share.openShareWindow(this.share.buildLinkedInIntent(this.share.getQuoteUrl(q.id)));
     this.showToastMsg('Shared to LinkedIn ✓');
   }
 
   async shareOnFacebook(): Promise<void> {
     const q = this.selectedQuote();
     if (!q) return;
-    const quoteUrl = window.location.origin + '/quote/' + q.id;
-    this.openShareWindow(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(quoteUrl)}`);
+    this.share.openShareWindow(this.share.buildFacebookIntent(this.share.getQuoteUrl(q.id)));
     this.showToastMsg('Shared to Facebook ✓');
   }
 
   openShareWindow(url: string): Window | null {
-    return window.open(url, '_blank', 'noopener,noreferrer');
+    return this.share.openShareWindow(url);
   }
 
   private trapFocus(event: KeyboardEvent): void {

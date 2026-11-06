@@ -381,11 +381,6 @@ a:hover {
   }
 }
 
-.category-chip:focus-visible {
-  outline: 2px solid var(--color-accent-light);
-  outline-offset: 3px;
-}
-
 /* ── 7. Quote Card ────────────────────────────────────────────── */
 .quote-card {
   position: relative;

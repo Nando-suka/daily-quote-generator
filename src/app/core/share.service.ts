@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Service } from '@angular/core';
 import type { Quote } from './quote.model';
 
 /**
@@ -8,7 +8,7 @@ import type { Quote } from './quote.model';
  * A permalink always points at the shareable route:
  * `${origin}/quote/:id`
  */
-@Injectable({ providedIn: 'root' })
+@Service()
 export class ShareService {
   /** Human-readable `"<content>" — <author>` text used for copy and X. */
   buildQuoteText(quote: Quote): string {
