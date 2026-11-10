@@ -1,43 +1,172 @@
-<!doctype html>
+<!-- ================================================================
+   Daily Quote Generator — App shell
+   ================================================================
+   Optimized for performance, SEO, and accessibility
+   Includes CSP, PWA, and structured data for better discoverability
+   ================================================================
+
+   Guidelines for CSP updates:
+   - Review Supabase URL and adjust connect-src as needed
+   - Consider adding 'unsafe-inline' for inline styles if required
+   - Use script-src 'self' 'unsafe-eval' for Angular dynamic content evaluation
+   - Check nonce/hashed-attribute for inline scripts if using them
+-->
+
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>Daily Quote Generator</title>
-    <base href="/" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- Primary SEO elements -->
+    <title>Daily Quote Generator — Daily Motivational Quotes</title>
     <meta
       name="description"
-      content="Daily Quote Generator — handpicked motivational quotes powered by Supabase and Angular."
+      content="Find handpicked motivational quotes daily. Refresh for new inspiration, share with friends, and start your day with positive thoughts."
     />
+    <meta name="author" content="Daily Quote Generator" />
+    <meta
+      name="keywords"
+      content="motivational quotes, daily inspiration, positive quotes, share quotes, social media quotes"
+    />
+
+    <!-- Viewport and theme -->
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#0c0c10" />
-    <meta property="og:title" content="Daily Quote Generator" />
+    <meta name="color-scheme" content="dark" />
+    <base href="/" />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://dailyquote.app/" />
+    <meta property="og:title" content="Daily Quote Generator — Daily Motivational Quotes" />
     <meta
       property="og:description"
-      content="Find a thoughtful quote in seconds — refresh, copy, and share."
+      content="Start your day with handpicked motivational quotes. Refresh for new inspiration, copy to clipboard, and share on social media."
     />
-    <meta property="og:type" content="website" />
-    <meta property="og:image" content="/preview.png" />
-    <meta name="twitter:card" content="summary_large_image" />
+    <meta property="og:image" content="/favicon.ico" />
+    <meta property="og:image:alt" content="Daily Quote Generator logo (gold sparkle on dark background)" />
+    <meta property="og:site_name" content="Daily Quote Generator" />
+    <meta property="og:locale" content="en_US" />
 
-    <link rel="icon" type="image/x-icon" href="favicon.ico" />
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@dailyquotegenerator" />
+    <meta name="twitter:creator" content="@dailyquotegenerator" />
+    <meta name="twitter:title" content="Daily Quote Generator — Daily Motivational Quotes" />
+    <meta
+      name="twitter:description"
+      content="Find your daily dose of inspiration. Handpicked motivational quotes to start your day positively."
+    />
+    <meta name="twitter:image" content="/favicon.ico" />
+
+    <!-- Structured data for SEO -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "Daily Quote Generator",
+        "description": "Find handpicked motivational quotes daily. Refresh for new inspiration, share with friends.",
+        "url": "https://dailyquote.app/",
+        "inLanguage": "en",
+        "publisher": {
+          "@type": "Organization",
+          "name": "Daily Quote Generator",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "/favicon.svg"
+          }
+        }
+      }
+    </script>
+
+    <!-- Favicon and app icons -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" sizes="any" />
     <link rel="manifest" href="/manifest.json" />
 
-    <!-- Content Security Policy — tighten after verifying Supabase URL -->
+    <!-- Preconnect to external resources -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    <!-- Optimized font loading -->
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap"
+      media="print"
+      onload="this.media='all'"
+    />
+
+    <!-- Content Security Policy -- tighten after verifying Supabase URL -->
     <!-- Adjust connect-src to your Supabase project domain -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://*.supabase.co; frame-ancestors 'none';"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://*.supabase.co; frame-ancestors 'none'; object-src 'none';"
     />
 
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap"
-      rel="stylesheet"
-    />
+    <!-- PWA meta tags -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="application-name" content="Daily Quote Generator" />
+
+    <!-- Performance hints -->
+    <link rel="dns-prefetch" href="//fonts.gstatic.com" />
+
+    <!-- Robots and indexing -->
+    <meta name="robots" content="index,follow" />
+    <meta name="googlebot" content="index,follow" />
+
+    <!-- Language and region -->
+    <meta name="language" content="en" />
+    <meta name="geography" content="Worldwide" />
+
+    <!-- Copyright and legal -->
+    <meta name="copyright" content="2024 Daily Quote Generator" />
+    <meta name="distribution" content="global" />
+
+    <!-- Security -->
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+
+    <!-- Web app capabilities -->
+    <meta name="mobile-web-app" content="yes" />
+    <meta name="web-app-capable" content="yes" />
   </head>
   <body>
-    <app-root></app-root>
+    <app-root>
+      <!-- Loading placeholder with skeleton animation -->
+      <div
+        id="initial-loading"
+        style="
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100vh;
+          background: linear-gradient(135deg, #0c0c10 0%, #1a1a24 100%);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 9999;
+          transition: opacity 0.3s ease;
+        "
+      >
+        <div
+          style="
+            width: 60px;
+            height: 60px;
+            border: 3px solid rgba(201, 169, 110, 0.3);
+            border-top: 3px solid #c9a96e;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+          "
+        ></div>
+        <style>
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        </style>
+      </div>
+    </app-root>
+
+    <!-- Service worker registration is handled by src/main.ts in production builds. -->
   </body>
 </html>
+

@@ -2,9 +2,11 @@ import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {
-    include: ['src/**/*.spec.ts'],
     environment: 'jsdom',
     globals: true,
-    setupFiles: [],
+    pool: 'forks',
+    maxWorkers: 2,
+    minWorkers: 1,
+    testTimeout: 10000,
   },
 });

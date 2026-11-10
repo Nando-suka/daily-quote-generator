@@ -19,7 +19,7 @@ import { environment } from '../../../environments/environment';
   templateUrl: './home.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
-    '[@keydown]': 'handleKeyDown($event)',
+    '(document:keydown)': 'handleKeyDown($event)',
   },
 })
 export class HomeComponent implements OnInit, OnDestroy {

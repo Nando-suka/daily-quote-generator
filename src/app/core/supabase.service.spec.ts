@@ -465,7 +465,9 @@ describe('SupabaseService — withRetry', () => {
       return 'success';
     });
 
-    const result = await (service as any).withRetry(operation, 3);
+    const promise = (service as any).withRetry(operation, 3) as Promise<string>;
+    await vi.advanceTimersByTimeAsync(10_000);
+    const result = await promise;
 
     expect(result).toBe('success');
     expect(attempts).toBe(3);
@@ -474,7 +476,11 @@ describe('SupabaseService — withRetry', () => {
   it('should throw after max retries exceeded', async () => {
     const operation = vi.fn().mockRejectedValue(new Error('Persistent failure'));
 
-    await expect((service as any).withRetry(operation, 2)).rejects.toThrow('Persistent failure');
+    const assertion = expect((service as any).withRetry(operation, 2)).rejects.toThrow(
+      'Persistent failure',
+    );
+    await vi.advanceTimersByTimeAsync(10_000);
+    await assertion;
     expect(operation).toHaveBeenCalledTimes(3);
   });
 
@@ -506,7 +512,7 @@ describe('SupabaseService — getCategories', () => {
   });
 
   it('should return sorted distinct categories', async () => {
-    const mockSelect = vi.fn().mockResolvedValue({
+    const mockNot = vi.fn().mockResolvedValue({
       data: [
         { category: 'work' },
         { category: 'life' },
@@ -516,6 +522,7 @@ describe('SupabaseService — getCategories', () => {
       ],
       error: null,
     });
+    const mockSelect = vi.fn().mockReturnValue({ not: mockNot });
     mockFrom.mockReturnValue({ select: mockSelect });
 
     const result = await service.getCategories();
@@ -524,10 +531,11 @@ describe('SupabaseService — getCategories', () => {
   });
 
   it('should return empty array when no categories exist', async () => {
-    const mockSelect = vi.fn().mockResolvedValue({
+    const mockNot = vi.fn().mockResolvedValue({
       data: [{ category: null }, { category: null }],
       error: null,
     });
+    const mockSelect = vi.fn().mockReturnValue({ not: mockNot });
     mockFrom.mockReturnValue({ select: mockSelect });
 
     const result = await service.getCategories();
@@ -536,10 +544,11 @@ describe('SupabaseService — getCategories', () => {
   });
 
   it('should throw on Supabase error', async () => {
-    const mockSelect = vi.fn().mockResolvedValue({
+    const mockNot = vi.fn().mockResolvedValue({
       data: null,
       error: new Error('query failed'),
     });
+    const mockSelect = vi.fn().mockReturnValue({ not: mockNot });
     mockFrom.mockReturnValue({ select: mockSelect });
 
     await expect(service.getCategories()).rejects.toThrow('query failed');
@@ -626,8 +635,8 @@ describe('SupabaseService — getQuotesByCategory', () => {
   });
 
   it('should return paginated quotes for a category', async () => {
-    const mockCountSelect = vi.fn().mockResolvedValue({ count: 10, error: null });
-    const mockCount = vi.fn().mockReturnValue({ select: mockCountSelect });
+    const mockCountEq = vi.fn().mockResolvedValue({ count: 10, error: null });
+    const mockCountSelect = vi.fn().mockReturnValue({ eq: mockCountEq });
 
     const mockRange = vi.fn().mockResolvedValue({
       data: [
@@ -641,7 +650,7 @@ describe('SupabaseService — getQuotesByCategory', () => {
     const mockSelect = vi.fn().mockReturnValue({ eq: mockEq });
 
     mockFrom
-      .mockReturnValueOnce({ select: mockCount })
+      .mockReturnValueOnce({ select: mockCountSelect })
       .mockReturnValueOnce({ select: mockSelect });
 
     const result = await service.getQuotesByCategory('work', 1, 5);
@@ -653,9 +662,9 @@ describe('SupabaseService — getQuotesByCategory', () => {
   });
 
   it('should return empty result when category has no quotes', async () => {
-    const mockCountSelect = vi.fn().mockResolvedValue({ count: 0, error: null });
-    const mockCount = vi.fn().mockReturnValue({ select: mockCountSelect });
-    mockFrom.mockReturnValueOnce({ select: mockCount });
+    const mockCountEq = vi.fn().mockResolvedValue({ count: 0, error: null });
+    const mockCountSelect = vi.fn().mockReturnValue({ eq: mockCountEq });
+    mockFrom.mockReturnValueOnce({ select: mockCountSelect });
 
     const result = await service.getQuotesByCategory('nonexistent', 1, 5);
 
@@ -665,8 +674,8 @@ describe('SupabaseService — getQuotesByCategory', () => {
   });
 
   it('should clamp page to valid range', async () => {
-    const mockCountSelect = vi.fn().mockResolvedValue({ count: 3, error: null });
-    const mockCount = vi.fn().mockReturnValue({ select: mockCountSelect });
+    const mockCountEq = vi.fn().mockResolvedValue({ count: 3, error: null });
+    const mockCountSelect = vi.fn().mockReturnValue({ eq: mockCountEq });
 
     const mockRange = vi.fn().mockResolvedValue({
       data: [{ id: 1, content: 'Quote 1', author: 'Author 1', category: 'work' }],
@@ -677,7 +686,7 @@ describe('SupabaseService — getQuotesByCategory', () => {
     const mockSelect = vi.fn().mockReturnValue({ eq: mockEq });
 
     mockFrom
-      .mockReturnValueOnce({ select: mockCount })
+      .mockReturnValueOnce({ select: mockCountSelect })
       .mockReturnValueOnce({ select: mockSelect });
 
     const result = await service.getQuotesByCategory('work', 99, 5);

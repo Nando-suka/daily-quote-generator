@@ -1,4 +1,4 @@
-import { Service, signal, Signal, computed } from '@angular/core';
+import { Service, inject } from '@angular/core';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { Quote, QuoteSchema } from './quote.model';
 import { SUPABASE_CONFIG, SupabaseConfig } from './supabase.config';
