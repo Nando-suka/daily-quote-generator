@@ -4,7 +4,34 @@ import { HomeComponent } from './home';
 import { SUPABASE_CONFIG } from '../../core/supabase.config';
 
 describe('HomeComponent', () => {
+  /** The Angular test runner's DOM shim has no `localStorage`. */
+  function installFakeStorage(): void {
+    const entries = new Map<string, string>();
+    const storage: Storage = {
+      get length() {
+        return entries.size;
+      },
+      key: (index: number) => Array.from(entries.keys())[index] ?? null,
+      getItem: (key: string) => entries.get(key) ?? null,
+      setItem: (key: string, value: string) => {
+        entries.set(key, String(value));
+      },
+      removeItem: (key: string) => {
+        entries.delete(key);
+      },
+      clear: () => {
+        entries.clear();
+      },
+    };
+
+    Object.defineProperty(window, 'localStorage', {
+      configurable: true,
+      value: storage,
+    });
+  }
+
   beforeEach(async () => {
+    installFakeStorage();
     await TestBed.configureTestingModule({
       imports: [HomeComponent],
       providers: [
@@ -31,6 +58,27 @@ describe('HomeComponent', () => {
     fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.querySelector('h1')?.textContent).toContain('Find a thoughtful quote');
+  });
+
+  it('should show the intro copy on the first visit', () => {
+    const fixture = TestBed.createComponent(HomeComponent);
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement as HTMLElement;
+
+    expect(compiled.querySelector('.hero-subtitle')).toBeTruthy();
+    expect(compiled.querySelector('.helper-pills')).toBeTruthy();
+  });
+
+  it('should drop the intro copy on return visits', () => {
+    window.localStorage.setItem('dqg.visit-count.v1', '1');
+
+    const fixture = TestBed.createComponent(HomeComponent);
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement as HTMLElement;
+
+    expect(compiled.querySelector('h1')).toBeTruthy();
+    expect(compiled.querySelector('.hero-subtitle')).toBeNull();
+    expect(compiled.querySelector('.helper-pills')).toBeNull();
   });
 
   it('should have openDrawer and closeDrawer methods', () => {

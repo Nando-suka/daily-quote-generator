@@ -1,14 +1,16 @@
 <section class="hero-copy" aria-label="Quick introduction">
   <p class="eyebrow">Daily inspiration</p>
   <h1>Find a thoughtful quote in seconds.</h1>
-  <p class="hero-subtitle">
-    Refresh your mood with a new line of encouragement, then copy or share it in one tap.
-  </p>
-  <div class="helper-pills" aria-label="App highlights">
-    <span class="hero-pill">Fresh perspective</span>
-    <span class="hero-pill">Easy to copy</span>
-    <span class="hero-pill">Ready to share</span>
-  </div>
+  @if (showIntro()) {
+    <p class="hero-subtitle">
+      Refresh your mood with a new line of encouragement, then copy or share it in one tap.
+    </p>
+    <div class="helper-pills" aria-label="App highlights">
+      <span class="hero-pill">Fresh perspective</span>
+      <span class="hero-pill">Easy to copy</span>
+      <span class="hero-pill">Ready to share</span>
+    </div>
+  }
 </section>
 
 <p class="date-chip">{{ today() }}</p>

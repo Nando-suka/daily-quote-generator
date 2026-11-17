@@ -32,6 +32,7 @@ src/
       supabase.service.ts      # Data access (count, random, paginated, by-id, categories)
       supabase.config.ts       # Injection token for env config
       share.service.ts         # Share URLs, clipboard, window opening
+      visit.service.ts         # localStorage visit counter (first-visit intro)
       error-handler.ts         # Global error handler
     pages/
       home/             # Home page: random quote, categories, drawer
@@ -77,6 +78,8 @@ src/
 
 - The app works offline without Supabase credentials (shows a connection error)
 - Service worker (`public/sw.js`) provides basic offline caching
+- First-visit intro: `VisitService` keeps a counter in `localStorage` under `dqg.visit-count.v1`; the home page hides its hero paragraph and helper pills after the first visit so the quote leads the fold
+- Visit tracking fails soft: if storage is blocked the service reports a first visit, so the intro is never hidden from a user it cannot recognise
 - Keyboard shortcuts: Ctrl/Cmd+Alt+T (X), Ctrl/Cmd+Alt+L (LinkedIn), Ctrl/Cmd+Alt+F (Facebook), Escape (close drawer)
 - `window.Sentry` reference in `error-handler.ts` is defensive — Sentry is not installed
 - ESLint configuration uses flat config system (requires Node.js 20+)

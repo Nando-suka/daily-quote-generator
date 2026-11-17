@@ -3,12 +3,14 @@ import {
   Component,
   OnDestroy,
   OnInit,
+  inject,
   signal,
 } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import type { Quote } from '../../core/quote.model';
 import { SupabaseService } from '../../core/supabase.service';
 import { ShareService } from '../../core/share.service';
+import { VisitService } from '../../core/visit.service';
 import { QuoteCardComponent } from '../../shared/quote-card/quote-card';
 import { QuoteDrawerComponent } from '../../quote-drawer/quote-drawer';
 import { environment } from '../../../environments/environment';
@@ -23,6 +25,11 @@ import { environment } from '../../../environments/environment';
   },
 })
 export class HomeComponent implements OnInit, OnDestroy {
+  private readonly visits = inject(VisitService);
+
+  /** Intro copy is onboarding, not content: keep it for the first visit only. */
+  readonly showIntro = this.visits.isFirstVisit;
+
   quote = signal<Quote | null>(null);
   loading = signal(false);
   error = signal<string | null>(null);
